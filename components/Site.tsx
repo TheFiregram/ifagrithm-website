@@ -1,28 +1,181 @@
 "use client";
+
 import Image from "next/image";
-import {FormEvent,useEffect,useMemo,useState} from "react";
-const X_URL="https://x.com/ifagrithm?s=11", LINKEDIN_URL="https://www.linkedin.com/company/ifagrithm/", EMAIL="Ifagrithm@gmail.com";
-const questions=["Who are our most valuable users and what else do they do?","Why are users leaving after an incentive?","Which market should we enter?","Is this partnership or integration worth pursuing?","Who actually reaches the audience we need?","Which distribution route produced valuable users?","Why aren't our sponsorship attempts converting?","What changed after we launched this intervention?"];
-const services=[["Behaviour Intelligence","Understand relevant users, wallets, journeys, activity and behavioural patterns."],["Market & Competitor Intelligence","Investigate markets, alternatives, competitors and changing activity."],["Growth & Distribution Intelligence","Investigate where relevant audiences or behaviours already exist and practical routes to reach them."],["Decision Research & Advisory","Compare evidence, economics, risks and dependencies around a specific business decision."],["Measurement & Decision Learning","Investigate what happened after an intervention and what should be learned."],["Custom Data & Research","Datasets, analytics, data modelling, research infrastructure and defined analytical projects where required."]];
-const onchain=["Transactions","Wallet activity","Protocol usage","Capital flows","Positions","Fees","Liquidity","Cross-protocol journeys","Retention / activity"], offchain=["Market research","Competitor activity","Social behaviour","Content engagement","Communities","Partnerships","Sponsorships","Distribution","Qualitative evidence"];
-function Brand(){return <a className="brand" href="#top"><span className="logoWrap"><Image src="/ifagrithm-logo.png" alt="" width={40} height={40} priority/></span><span>IFAGRITHM</span></a>}
-function Evidence({title,items}:{title:string,items:string[]}){return <div className="evidenceBox"><p className="miniLabel">{title}</p><div className="tagList">{items.map(x=><span key={x}>{x}</span>)}</div></div>}
-export default function Site(){
- const [theme,setTheme]=useState<"dark"|"light">("dark"),[menu,setMenu]=useState(false),[status,setStatus]=useState("");
- const [brief,setBrief]=useState({name:"",company:"",email:"",question:"",decision:"",notes:""});
- useEffect(()=>{document.documentElement.dataset.theme=theme},[theme]);
- const mailBody=useMemo(()=>encodeURIComponent(`Name: ${brief.name}\nCompany: ${brief.company}\nWork email: ${brief.email}\n\nBusiness question:\n${brief.question}\n\nDecision:\n${brief.decision}\n\nAdditional context:\n${brief.notes}`),[brief]);
- function submit(e:FormEvent){e.preventDefault();if(!brief.name.trim()||!brief.email.trim()||!brief.question.trim()||!brief.decision.trim()){setStatus("Please complete the required fields.");return}setStatus("Your email app will open with the project brief prepared. Nothing is stored on this website.");window.location.href=`mailto:${EMAIL}?subject=${encodeURIComponent("IFAGRITHM project question — "+brief.company)}&body=${mailBody}`}
- async function copyBrief(){const t=`IFAGRITHM PROJECT BRIEF\n\nName: ${brief.name}\nCompany: ${brief.company}\nWork email: ${brief.email}\n\nBusiness question:\n${brief.question}\n\nDecision:\n${brief.decision}\n\nAdditional context:\n${brief.notes}`;try{await navigator.clipboard.writeText(t);setStatus("Project brief copied.")}catch{setStatus("Copy unavailable on this browser. You can email the brief instead.")}}
- return <><header className="nav" id="top"><div className="shell navInner"><Brand/><nav id="primary-navigation" aria-label="Main navigation" onClick={()=>setMenu(false)} className={menu?"navLinks open":"navLinks"}><a href="#research">Research</a><a href="#services">Services</a><a href="#method">Method</a><a href="#about">About</a><a className="navCta" href="#contact">Bring us a question</a></nav><div className="navActions"><button className="iconBtn" onClick={()=>setTheme(theme==="dark"?"light":"dark")} aria-label="Toggle theme">{theme==="dark"?"☀":"◐"}</button><button className="menuBtn" onClick={()=>setMenu(!menu)} aria-label="Toggle menu" aria-expanded={menu} aria-controls="primary-navigation">{menu?"×":"☰"}</button></div></div></header>
- <main>
- <section className="hero section"><div className="shell heroGrid"><div><p className="eyebrow">WEB3 DATA & RESEARCH</p><h1>We investigate the questions behind <em>business decisions.</em></h1><p className="lead">IFAGRITHM combines data, research and behavioural analysis to help Web3 teams understand what is happening, why it matters, and what may be worth doing next.</p><div className="actions"><a className="primary" href="#contact">Bring us a question <span>↗</span></a><a className="secondary" href="#research">Explore research</a></div></div><div className="systemCard"><p className="miniLabel">RESEARCH SYSTEM</p>{["Question","Evidence","Behaviour","Economic meaning","Decision"].map((x,i)=><div className="systemRow" key={x}><span>{String(i+1).padStart(2,"0")}</span><strong>{x}</strong>{i<4&&<b>↓</b>}</div>)}<div className="systemFoot">The answer may be act, test, investigate further — or do nothing.</div></div></div></section>
- <section className="section ruled"><div className="shell"><div className="sectionHead"><div><p className="eyebrow">EXAMPLE RESEARCH QUESTIONS</p><h2>Start with the question.</h2></div><p>Different business questions require different evidence. These are examples, not client claims.</p></div><div className="questionGrid">{questions.map((q,i)=><article className="questionCard" key={q}><span>0{i+1}</span><p>{q}</p><b>↗</b></article>)}</div></div></section>
- <section className="section evidence"><div className="shell"><div className="sectionHead"><div><p className="eyebrow">EVIDENCE</p><h2>The question determines the data.</h2></div><p>We don&apos;t force every problem into an on-chain dataset. We use the evidence the question requires.</p></div><div className="evidenceGrid"><Evidence title="ON-CHAIN" items={onchain}/><div className="researchCore"><span>QUESTION</span><i>→</i><strong>IFAGRITHM<br/>RESEARCH</strong><i>→</i><span>DECISION</span></div><Evidence title="OFF-CHAIN" items={offchain}/></div></div></section>
- <section className="section ruled"><div className="shell"><div className="sectionHead"><div><p className="eyebrow">PROCESS</p><h2>From question to decision.</h2></div><p>Research is useful when it reduces uncertainty without pretending uncertainty has disappeared.</p></div><div className="process">{["Business question","Evidence","Behaviour & patterns","Economic meaning","Decision options","Test","Learn"].map((x,i)=><div className="processItem" key={x}><span>0{i+1}</span><strong>{x}</strong>{i<6&&<b>→</b>}</div>)}</div></div></section>
- <section className="section" id="services"><div className="shell"><div className="sectionHead"><div><p className="eyebrow">SERVICES</p><h2>What we investigate.</h2></div><p>A project can combine several capabilities. We scope the actual question rather than forcing every team through the same package.</p></div><div className="serviceGrid">{services.map(([t,d],i)=><article className="service" key={t}><span>0{i+1}</span><h3>{t}</h3><p>{d}</p></article>)}</div></div></section>
- <section className="section method ruled" id="method"><div className="shell"><div className="sectionHead"><div><p className="eyebrow">METHOD</p><h2>Desire creates behaviour.</h2></div><p>DBB is the thinking underneath the work, not something a client must learn before bringing us a question.</p></div><div className="dbb">{[["DESIRE","People are trying to accomplish something."],["BEHAVIOUR","Their actions create observable patterns."],["BUSINESS","Repeated behaviour may reveal where a product can provide useful value."]].map(([a,b],i)=><div className="dbbCard" key={a}><span>0{i+1}</span><h3>{a}</h3><p>{b}</p></div>)}</div><div className="bpa"><span>BEFORE</span><b>→</b><strong>PRODUCT</strong><b>→</b><span>AFTER</span><p>One structure we use to investigate the activity surrounding a product.</p></div></div></section>
- <section className="section" id="research"><div className="shell"><div className="sectionHead"><div><p className="eyebrow">PUBLIC RESEARCH</p><h2>Research.</h2></div><p>We will publish the question, evidence, method, findings, limitations and business implications — not decorative dashboards without context.</p></div><div className="researchPlaceholder"><div><span className="status">RESEARCH 001 · COMING SOON</span><h3>Our first public investigation.</h3><p>No client case studies are being invented here. Verified public work will replace this placeholder as it is completed.</p></div><div className="formats"><span>Behaviour Maps</span><span>Decision Briefs</span><span>Behaviour Signals</span></div></div></div></section>
- <section className="section about ruled" id="about"><div className="shell aboutGrid"><div><p className="eyebrow">ABOUT</p><h2>Why IFAGRITHM?</h2><p className="aboutLead">IFAGRITHM combines “Ifá” and “algorithm”. The name is inspired by interpreting patterns to inform guidance, combined with systematic computation and research.</p><p>Our commercial work is evidence-based: documented data, explicit assumptions, reproducible methods where appropriate, and clear uncertainty. The brand does not claim spiritual authority or equate data science with divination.</p></div><aside className="founder"><p className="miniLabel">FOUNDER</p><h3>Olamilekan Alaga</h3><p>MSc Data Science<br/>University of Greenwich</p><hr/><p>Web3 research · On-chain analytics · Behavioural analysis · Data analysis</p></aside></div></section>
- <section className="section contact" id="contact"><div className="shell contactGrid"><div><p className="eyebrow">PROJECT BRIEF</p><h2>Bring us a question worth investigating.</h2><p className="lead small">Tell us the decision you&apos;re trying to make, what you already know, and where the uncertainty is.</p><div className="contactLinks"><a href={`mailto:${EMAIL}`}>{EMAIL}</a><a href={X_URL} target="_blank" rel="noreferrer">X / @ifagrithm ↗</a><a href={LINKEDIN_URL} target="_blank" rel="noreferrer">LinkedIn ↗</a></div></div><form className="briefForm" onSubmit={submit}><label>Name *<input required autoComplete="name" value={brief.name} onChange={e=>setBrief({...brief,name:e.target.value})}/></label><label>Company<input autoComplete="organization" value={brief.company} onChange={e=>setBrief({...brief,company:e.target.value})}/></label><label>Work email *<input required autoComplete="email" type="email" value={brief.email} onChange={e=>setBrief({...brief,email:e.target.value})}/></label><label>Business question *<textarea required value={brief.question} onChange={e=>setBrief({...brief,question:e.target.value})}/></label><label>What decision are you trying to make? *<textarea required value={brief.decision} onChange={e=>setBrief({...brief,decision:e.target.value})}/></label><label>Anything else we should know?<textarea value={brief.notes} onChange={e=>setBrief({...brief,notes:e.target.value})}/></label><div className="formActions"><button className="primary" type="submit">Email project brief ↗</button><button className="secondary button" type="button" onClick={copyBrief}>Copy brief</button></div>{status&&<p className="formStatus" aria-live="polite">{status}</p>}<p className="privacy">No form backend is connected in v1. Nothing entered here is stored by this website.</p></form></div></section>
- </main><footer><div className="shell footerGrid"><div><Brand/><p>Web3 Data & Research<br/>From behaviour to decisions.</p></div><div><a href="#research">Research</a><a href="#services">Services</a><a href="#method">Method</a><a href="#about">About</a></div><div><a href={X_URL} target="_blank" rel="noreferrer">X ↗</a><a href={LINKEDIN_URL} target="_blank" rel="noreferrer">LinkedIn ↗</a><a href={`mailto:${EMAIL}`}>Email ↗</a></div><small>© {new Date().getFullYear()} IFAGRITHM</small></div></footer></>}
+import { type FormEvent, useEffect, useRef, useState } from "react";
+
+const X_URL = "https://x.com/ifagrithm?s=11";
+const LINKEDIN_URL = "https://www.linkedin.com/company/ifagrithm/";
+const EMAIL = "Ifagrithm@gmail.com";
+
+const services = [
+  {
+    title: "User & Behaviour Research",
+    description: "Understand how people use your product, what different user groups do, and how activity changes over time.",
+    outputs: ["Behaviour segments", "User journey analysis", "Retention and activity research"],
+  },
+  {
+    title: "Market & Competitor Intelligence",
+    description: "Investigate competing products, market activity and the alternatives your users already choose.",
+    outputs: ["Competitor studies", "Market briefs", "Product comparisons"],
+  },
+  {
+    title: "Growth & Distribution Research",
+    description: "Investigate where relevant audiences already are and assess channels, communities and partnerships worth testing.",
+    outputs: ["Audience research", "Distribution maps", "Partnership assessments"],
+  },
+  {
+    title: "Decision Research & Measurement",
+    description: "Combine evidence around a business question, then measure what happens when a team acts on it.",
+    outputs: ["Decision briefs", "Intervention analysis", "Custom analytical studies"],
+  },
+];
+
+const approach = [
+  ["Define the decision", "Agree on the question, the scope and what the research needs to inform."],
+  ["Investigate the evidence", "Use on-chain activity, market information and qualitative research as the question requires."],
+  ["Deliver the findings", "Explain the patterns, limitations and practical options in a clear research brief."],
+];
+
+function Arrow({ diagonal = false }: { diagonal?: boolean }) {
+  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={diagonal ? "M6 18 18 6M6 6h12v12" : "M4 12h16m-6-6 6 6-6 6"} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+}
+
+function Brand() {
+  return <a className="brand" href="#top" aria-label="IFAGRITHM home"><span className="logo-wrap"><Image src="/ifagrithm-logo.png" alt="" width={36} height={36} priority /></span><span>IFAGRITHM</span></a>;
+}
+
+function ResearchMap() {
+  return <figure className="research-map" aria-labelledby="map-caption">
+    <figcaption id="map-caption"><span className="map-title">Illustrative research map</span><span className="map-label">CONCEPTUAL ILLUSTRATION</span></figcaption>
+    <div className="map-canvas">
+      <svg className="map-connections" viewBox="0 0 480 390" preserveAspectRatio="none" fill="none" aria-hidden="true">
+        <path d="M240 100v30H110v28M211 200h58M368 254v36H240v18" stroke="currentColor" strokeWidth="1.4" />
+        <path d="m106 150 4 8 4-8M261 196l8 4-8 4M236 300l4 8 4-8" stroke="currentColor" strokeWidth="1.4" />
+      </svg>
+      <div className="map-node node-activity"><span className="node-index">01 / OBSERVE</span><strong>Product activity</strong><span className="node-detail">How people use a product</span></div>
+      <span className="mobile-connector" aria-hidden="true">↓</span>
+      <div className="map-node node-segments"><span className="node-index">02 / UNDERSTAND</span><strong>User segments</strong></div>
+      <span className="mobile-connector" aria-hidden="true">↓</span>
+      <div className="map-node node-related"><span className="node-index">03 / INVESTIGATE</span><strong>Related products<br />and channels</strong></div>
+      <span className="mobile-connector" aria-hidden="true">↓</span>
+      <div className="map-node node-hypotheses"><span className="node-index">04 / EXPLORE</span><strong>Acquisition hypotheses</strong><span className="node-detail">Routes worth testing</span></div>
+    </div>
+  </figure>;
+}
+
+export default function Site() {
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [menu, setMenu] = useState(false);
+  const [status, setStatus] = useState("");
+  const [copyFallback, setCopyFallback] = useState("");
+  const [brief, setBrief] = useState({ name: "", email: "", company: "", question: "" });
+  const menuButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  useEffect(() => {
+    if (!menu) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setMenu(false); menuButton.current?.focus(); }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menu]);
+
+  function briefText() {
+    return `IFAGRITHM PROJECT BRIEF\n\nName: ${brief.name.trim()}\nWork email: ${brief.email.trim()}\nCompany: ${brief.company.trim() || "Not provided"}\n\nWhat would you like us to investigate?\n${brief.question.trim()}`;
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!brief.name.trim() || !brief.email.trim() || !brief.question.trim()) {
+      setStatus("Please complete your name, work email and research question.");
+      return;
+    }
+    const subject = `IFAGRITHM project brief${brief.company.trim() ? ` — ${brief.company.trim()}` : ""}`;
+    const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(briefText())}`;
+    setStatus("Review and send your brief in your email app. If it does not open, use Copy brief or the email link.");
+    window.location.assign(mailto);
+  }
+
+  async function copyBrief() {
+    const text = briefText();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFallback("");
+      setStatus("Brief copied. Paste it into an email when you are ready.");
+    } catch {
+      setCopyFallback(text);
+      setStatus("Automatic copying is unavailable. Select and copy your brief below, then email it to us.");
+    }
+  }
+
+  return <>
+    <a className="skip-link" href="#main">Skip to content</a>
+    <header className="site-header" id="top">
+      <div className="shell header-inner">
+        <Brand />
+        <nav id="primary-navigation" aria-label="Main navigation" className={`nav-links${menu ? " is-open" : ""}`}>
+          <a href="#services" onClick={() => setMenu(false)}>Services</a>
+          <a href="#approach" onClick={() => setMenu(false)}>Approach</a>
+          <a className="nav-cta" href="#contact" onClick={() => setMenu(false)}>Discuss a project <Arrow diagonal /></a>
+        </nav>
+        <div className="nav-actions">
+          <button className="icon-button" type="button" onClick={() => setTheme(current => current === "light" ? "dark" : "light")} aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}>
+            {theme === "light" ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.2A8.5 8.5 0 0 1 9.8 4a8.5 8.5 0 1 0 10.2 10.2Z" stroke="currentColor" strokeWidth="1.5" /></svg> : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" stroke="currentColor" strokeWidth="1.5" /></svg>}
+          </button>
+          <button ref={menuButton} className="icon-button menu-button" type="button" onClick={() => setMenu(current => !current)} aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} aria-controls="primary-navigation"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={menu ? "m6 6 12 12M6 18 18 6" : "M4 8h16M4 16h16"} stroke="currentColor" strokeWidth="1.5" /></svg></button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <section className="hero" aria-labelledby="hero-title">
+        <div className="shell hero-grid">
+          <div className="hero-copy">
+            <p className="eyebrow"><span className="accent-mark" aria-hidden="true" />WEB3 RESEARCH &amp; INTELLIGENCE</p>
+            <h1 id="hero-title">Understand your users.<br /><span>Find where growth can come from.</span></h1>
+            <p className="hero-body">IFAGRITHM helps Web3 teams understand what their users do, identify meaningful behavioural segments, and investigate where similar users already are.</p>
+            <p className="hero-secondary">User behaviour, market research and competitor intelligence for clearer business decisions.</p>
+            <a className="primary" href="#contact">Discuss a project <Arrow diagonal /></a>
+          </div>
+          <ResearchMap />
+        </div>
+      </section>
+
+      <section className="services section" id="services" aria-labelledby="services-title">
+        <div className="shell">
+          <div className="section-heading"><p className="eyebrow">WHAT WE DO</p><h2 id="services-title">Research built around<br />your next decision.</h2></div>
+          <div className="service-grid">{services.map((service, index) => <article className="service" key={service.title}>
+            <span className="service-number">0{index + 1}</span>
+            <div className="service-content"><h3>{service.title}</h3><p>{service.description}</p><div className="service-outputs"><span>Typical outputs</span><ul>{service.outputs.map(output => <li key={output}>{output}</li>)}</ul></div></div>
+          </article>)}</div>
+        </div>
+      </section>
+
+      <section className="approach section" id="approach" aria-labelledby="approach-title">
+        <span id="method" className="anchor-alias" aria-hidden="true" /><span id="about" className="anchor-alias" aria-hidden="true" />
+        <div className="shell">
+          <div className="approach-heading"><p className="eyebrow">HOW WE WORK</p><h2 id="approach-title">A clear question. Evidence you can inspect. A useful next step.</h2></div>
+          <ol className="approach-steps">{approach.map(([title, description], index) => <li key={title}><span className="step-index">0{index + 1}</span><h3>{title}</h3><p>{description}</p></li>)}</ol>
+        </div>
+      </section>
+
+      <section className="contact section" id="contact" aria-labelledby="contact-title">
+        <div className="shell contact-grid">
+          <div className="contact-copy"><p className="eyebrow">START A PROJECT</p><h2 id="contact-title">What are you trying to understand?</h2><p>Tell us about your product and the decision you are working through.</p><a className="email-link" href={`mailto:${EMAIL}`}>{EMAIL} <Arrow diagonal /></a><div className="social-links"><a href={X_URL} target="_blank" rel="noopener noreferrer">X / @ifagrithm <Arrow diagonal /></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow diagonal /></a></div></div>
+          <form className="brief-form" onSubmit={submit}>
+            <div className="form-row"><label htmlFor="brief-name">Name <span aria-hidden="true">*</span><input id="brief-name" name="name" required autoComplete="name" maxLength={200} value={brief.name} onChange={event => setBrief({ ...brief, name: event.target.value })} /></label><label htmlFor="brief-email">Work email <span aria-hidden="true">*</span><input id="brief-email" name="email" required type="email" autoComplete="email" maxLength={254} value={brief.email} onChange={event => setBrief({ ...brief, email: event.target.value })} /></label></div>
+            <label htmlFor="brief-company">Company <span className="optional">(optional)</span><input id="brief-company" name="company" autoComplete="organization" maxLength={200} value={brief.company} onChange={event => setBrief({ ...brief, company: event.target.value })} /></label>
+            <label htmlFor="brief-question">What would you like us to investigate? <span aria-hidden="true">*</span><textarea id="brief-question" name="question" required maxLength={4000} rows={5} value={brief.question} onChange={event => setBrief({ ...brief, question: event.target.value })} /></label>
+            <div className="form-actions"><button className="primary" type="submit">Open email with your brief <Arrow diagonal /></button><button className="text-button" type="button" onClick={copyBrief}>Copy brief <Arrow /></button></div>
+            <p className="form-helper">Opens your email app. Review and send your message there.</p>
+            <p className="form-status" role="status">{status}</p>
+            {copyFallback && <label className="copy-fallback" htmlFor="copy-fallback">Your brief to copy<textarea id="copy-fallback" readOnly value={copyFallback} rows={8} onFocus={event => event.currentTarget.select()} /></label>}
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer className="site-footer"><div className="shell footer-inner"><div><Brand /><p>Web3 research. Clearer decisions.</p></div><nav aria-label="Footer navigation"><a href="#services">Services</a><a href="#contact">Contact</a><a href={X_URL} target="_blank" rel="noopener noreferrer">X <Arrow diagonal /></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow diagonal /></a></nav><small>© {new Date().getFullYear()} IFAGRITHM</small></div></footer>
+  </>;
+}
