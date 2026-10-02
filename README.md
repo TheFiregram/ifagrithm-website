@@ -19,7 +19,13 @@ npm run build
 
 ## Homepage
 
-The page introduces the offer, an explicitly labelled conceptual research map, four services, a compact approach and a project contact form. Light is the initial appearance; the toggle provides a complete dark theme. Existing `#method` and `#about` URLs land at Approach.
+The page is a single scroll: a full-viewport landing hero (the logo rebuilt as a lit three.js gold object that loads assembled, holds, then spins, over an original GLSL backdrop — fog, ground tide and all background styles are painted by one shader, so no layer clashes), a deliverables ticker, four services as full-width rows with ghost numbers and a unique animated motif each (segment donut, candles, constellation, decision fork), an evidence trio with animated motifs, the conceptual research map rendered as a live flow, an approach statement over a gold-tinted texture, a sectors strip, a short FAQ and a project contact form. Buttons carry a shine-sweep hover, cards lift with a gold edge, sections fade up on scroll, and the footer closes on a giant ghost IFAGRITHM wordmark. The site is dark-only by choice; the light theme tokens remain in `globals.css` but no toggle is exposed. Existing `#method` and `#about` URLs land at Approach.
+
+The hero background is locked to the Horizon style (fog only, no tide — removed as visually clashing). three.js ships in the main bundle so the mark mounts as soon as the page hydrates: it sits perfectly still on load, then spins up. The environment map is a canvas-painted gradient rather than a generated room, and the pixel ratio is capped at 1.75. The gold fluid texture from the approach section is repeated at lower opacity in the evidence and contact sections.
+
+Three.js is the only runtime dependency added; the hero is a static pose when `prefers-reduced-motion` is set and pauses off-screen. The approach band texture is an Unsplash-licensed image recoloured to the brand gold in CSS (`public/band-bg.jpg`).
+
+Content that needs sign-off before a public release (all drafted from claims already on the page, no new facts): the FAQ answers, the sectors strip list, and the evidence-card descriptions. The ticker only reuses the published service outputs.
 
 No research showcase is published in this release: the website repository contains no matching public research source and working article destination for the candidate Superteam UK, lending utilisation or wallet behaviour work. Add only verified, public, non-confidential material with useful destinations; independent work must retain its independent status.
 
