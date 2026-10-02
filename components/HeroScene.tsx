@@ -202,7 +202,9 @@ export default function HeroScene({ variant = 0, onReady }: { variant?: number; 
     let baseScale = 1.0;
     function pose() {
       const w = mount!.clientWidth;
-      if (w < 860) { mark.position.x = 0; baseY = 2.9; baseScale = 0.7; }
+      // mobile: canvas is viewport-height and top-anchored; mark sits in the
+      // top band, clear of the copy that starts below it
+      if (w < 860) { mark.position.x = 0; baseY = 2.3; baseScale = 0.5; }
       else { mark.position.x = 3.05; baseY = 0.1; baseScale = 1.0; }
       mark.position.y = baseY;
     }

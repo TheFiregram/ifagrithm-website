@@ -288,10 +288,12 @@ h2 { font-size: clamp(32px, 3.6vw, 52px); letter-spacing: -.03em; line-height: 1
   .nav-links.is-open { display: flex; flex-direction: column; align-items: stretch; }
   .nav-links > a { padding: 12px; }
   .nav-links .nav-cta { justify-content: space-between; margin-top: 10px; }
-  .hero { padding-block: 130px 110px; }
+  .hero { display: block; padding-block: 0 84px; }
+  .hero-scene { inset: auto 0 auto 0; top: 0; height: 100dvh; -webkit-mask-image: linear-gradient(180deg, #000 76%, transparent 100%); mask-image: linear-gradient(180deg, #000 76%, transparent 100%); }
+  .hero-inner { padding-top: calc(42vh + 20px); }
   .hero-copy { max-width: 610px; }
   h1 { font-size: clamp(40px, 9.4vw, 54px); }
-  .service-row { grid-template-columns: 1fr; gap: 18px; padding-block: 36px; }
+  .service-row { grid-template-columns: 1fr; gap: 18px; padding-block: 36px; padding-inline: 0; margin-inline: 0; border-radius: 0; }
   .service-index { font-size: 30px; }
   .service-row .viz { display: block; height: 84px; }
   .evidence-grid { grid-template-columns: 1fr; gap: 16px; }
