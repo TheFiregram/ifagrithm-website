@@ -74,6 +74,9 @@
 .apply-helper { color: var(--muted); font-size: 13px; margin-top: -34px; }
 .apply-status { color: var(--accent); font-size: 14px; min-height: 20px; margin-top: -26px; }
 .apply-fallback { margin-top: 4px; }
+.apply-done { border: 1px solid rgba(229, 190, 49, 0.4); border-radius: 14px; padding: 24px 26px; background: rgba(229, 190, 49, 0.05); }
+.apply-done-title { font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 600; margin: 0 0 8px; color: var(--accent); }
+.apply-done p { margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--muted); max-width: 560px; }
 
 /* side panel */
 .apply-side { position: sticky; top: 110px; border: 1px solid var(--line); border-radius: 18px; padding: 30px 28px; background: linear-gradient(180deg, rgba(229, 190, 49, .05), transparent 55%), rgba(255, 255, 255, .02); }

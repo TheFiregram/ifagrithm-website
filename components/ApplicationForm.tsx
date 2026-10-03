@@ -36,6 +36,8 @@ function Arrow({ diagonal = false }: { diagonal?: boolean }) {
 export default function ApplicationForm() {
   const [form, setForm] = useState<Application>(EMPTY);
   const [status, setStatus] = useState("");
+  const [sending, setSending] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [copyFallback, setCopyFallback] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -94,14 +96,44 @@ export default function ApplicationForm() {
     return null;
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const gap = missing();
     if (gap) { setStatus(gap); return; }
-    const subject = `Research network application — ${form.fullName.trim()}`;
-    const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(applicationText())}`;
-    setStatus("Review and send your application in your email app. If it does not open, use Copy application.");
-    window.location.assign(mailto);
+    setSending(true);
+    try {
+      const res = await fetch("/api/apply", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          full_name: form.fullName.trim(),
+          x_handle: form.x.trim(),
+          telegram: form.telegram.trim(),
+          email: form.email.trim(),
+          country: form.country.trim(),
+          role: form.role,
+          desks: form.desks,
+          links: form.links.trim(),
+          context: form.context.trim(),
+          why: form.why.trim(),
+        }),
+      });
+      if (res.status === 201) {
+        setSubmitted(true);
+        setStatus("");
+        return;
+      }
+      const data = await res.json().catch(() => null);
+      setStatus(
+        res.status >= 500
+          ? `We couldn't receive it just now — use Copy application and email it to ${EMAIL}.`
+          : data?.error || "Something went wrong — check your details and try again."
+      );
+    } catch {
+      setStatus(`Network error — use Copy application and email it to ${EMAIL}.`);
+    } finally {
+      setSending(false);
+    }
   }
 
   async function copyApplication() {
@@ -216,12 +248,21 @@ export default function ApplicationForm() {
               </label>
             </fieldset>
 
-            <div className="apply-actions" data-reveal>
-              <button className="primary" type="submit">Open email with your application <Arrow diagonal /></button>
-              <button className="apply-copy" type="button" onClick={copyApplication}>Copy application <Arrow /></button>
-            </div>
-            <p className="apply-helper" data-reveal>Opens your email app — nothing is stored on this site. We reply to every application we receive.</p>
-            <p className="apply-status" role="status" data-reveal>{status}</p>
+            {submitted ? (
+              <div className="apply-done" data-reveal role="status">
+                <p className="apply-done-title">Application received.</p>
+                <p>We read every application and reply to each one. If it is a fit, you get an approval mail with your desk, your tier and a link to claim your network card.</p>
+              </div>
+            ) : (
+              <>
+                <div className="apply-actions" data-reveal>
+                  <button className="primary" type="submit" disabled={sending}>{sending ? "Sending…" : "Submit application"} <Arrow diagonal /></button>
+                  <button className="apply-copy" type="button" onClick={copyApplication}>Copy application <Arrow /></button>
+                </div>
+                <p className="apply-helper" data-reveal>Goes straight to the review inbox — we reply to every application we receive.</p>
+                <p className="apply-status" role="status" data-reveal>{status}</p>
+              </>
+            )}
             {copyFallback && (
               <label className="apply-fallback" htmlFor="ap-fallback">Your application to copy
                 <textarea id="ap-fallback" readOnly value={copyFallback} rows={10} onFocus={e => e.currentTarget.select()} />

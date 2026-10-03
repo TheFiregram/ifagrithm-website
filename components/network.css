@@ -227,6 +227,21 @@
 /* ---------- stage ---------- */
 
 .ifg-stage { position: sticky; top: 30px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+.ifg-claim-banner {
+  font-family: var(--font-mono), monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent, #e5be31);
+  border: 1px solid rgba(229, 190, 49, 0.45);
+  border-radius: 10px;
+  background: rgba(229, 190, 49, 0.07);
+  padding: 12px 18px;
+  text-align: center;
+  line-height: 1.6;
+  max-width: 480px;
+}
+.ifg-claim-banner.bad { color: #e0764a; border-color: rgba(224, 118, 74, 0.5); background: rgba(224, 118, 74, 0.06); }
 .ifg-card-shell {
   position: relative;
   width: 100%;

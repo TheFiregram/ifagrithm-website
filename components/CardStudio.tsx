@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { toPng } from "html-to-image";
 import "./network.css";
 
@@ -58,8 +59,12 @@ function readFileAsDataURL(file: Blob): Promise<string> {
 }
 
 export default function CardStudio() {
+  const searchParams = useSearchParams();
+  const claimToken = searchParams.get("t");
   const [data, setData] = useState<CardData>(SAMPLE);
   const [avatar, setAvatar] = useState<string | null>(SAMPLE_AVATAR);
+  const [claim, setClaim] = useState<{ name: string; serial: string } | null>(null);
+  const [claimState, setClaimState] = useState<"idle" | "ok" | "invalid">("idle");
   const [xHandle, setXHandle] = useState("");
   const [xStatus, setXStatus] = useState<"idle" | "loading" | "miss" | "error">("idle");
   const [exporting, setExporting] = useState(false);
@@ -81,6 +86,37 @@ export default function CardStudio() {
   useEffect(() => {
     setLive(true);
   }, []);
+
+  // an approved member arrives via a claim link: /network?t=<token>
+  useEffect(() => {
+    if (!/^[a-f0-9]{48}$/.test(claimToken ?? "")) {
+      if (claimToken) setClaimState("invalid");
+      return;
+    }
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/claim?t=${claimToken}`);
+        if (!res.ok) throw new Error();
+        const info = await res.json();
+        if (!alive) return;
+        const desk = DESKS.find(d => d === String(info.desk ?? "").toUpperCase());
+        setData(d => ({
+          ...d,
+          name: info.name || d.name,
+          role: info.role === "RESEARCH ANALYST" ? "RESEARCH ANALYST" : "RESEARCH SCOUT",
+          desk: desk ?? d.desk,
+          serial: info.serial || d.serial,
+        }));
+        setAvatar(null);
+        setClaim({ name: info.name ?? "", serial: info.serial ?? "" });
+        setClaimState("ok");
+      } catch {
+        if (alive) setClaimState("invalid");
+      }
+    })();
+    return () => { alive = false; };
+  }, [claimToken]);
 
   // webfonts land after first paint — re-fit once they do
   useEffect(() => {
@@ -325,6 +361,16 @@ export default function CardStudio() {
 
         {/* ------- preview ------- */}
         <section className="ifg-stage" aria-label="Card preview">
+          {claimState === "ok" && claim ? (
+            <div className="ifg-claim-banner" role="status">
+              VERIFIED · {claim.serial} — your details are loaded. Add your photo, make it yours, download.
+            </div>
+          ) : null}
+          {claimState === "invalid" ? (
+            <div className="ifg-claim-banner bad" role="alert">
+              This claim link isn&apos;t valid — ask for a fresh approval mail.
+            </div>
+          ) : null}
           <div className="ifg-card-shell" ref={shellRef}>
             <div
               ref={cardRef}

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import CardStudio from "@/components/CardStudio";
 
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function NetworkPage() {
-  return <CardStudio />;
+  return (
+    <Suspense fallback={null}>
+      <CardStudio />
+    </Suspense>
+  );
 }

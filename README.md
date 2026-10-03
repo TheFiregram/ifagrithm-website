@@ -40,7 +40,13 @@ Two additional routes support the research network:
 - **`/application`** — the join-the-network application (replaces the external Tally form). Sectioned form: identity (name, X, Telegram, email, country), role selection (Research Scout / Research Analyst) with desk chips, proof-of-work links, and motivation. Submission composes a structured email to IFAGRITHM — nothing is stored server-side, matching the brief form. The homepage nav and footer link here. Section copy beyond the identity fields is drafted for sign-off.
 - **`/network`** — internal card studio (noindex). Renders a member's network card at exactly 1080×1350 and exports it as a PNG in-browser via `html-to-image` (the only dependency added by these routes; three.js remains the other). Photo comes from an upload or an X handle resolved through `/api/avatar` (same-origin proxy over unavatar.io; monogram fallback). Tier colors are the one semantic exception to the single-accent rule.
 
-The production approval flow (application review → approval mail → pre-filled card link) is not built yet; the studio currently runs on editable sample data.
+The production approval flow is live:
+
+- **`/api/apply`** — `/application` posts here; the route forwards to the network store on the Contabo box (applications of record live in the `ifagrithm` database in the existing PostgreSQL 16 cluster, loopback-only). If the store is unreachable the form tells the applicant to use the copy fallback, so nothing is silently lost.
+- **`/admin`** — password-gated console (one shared password, HMAC-signed cookie). Lists the queue; **Approve** marks the row approved, mints a claim token and mails the congratulations with a `/network?t=` link through Resend. Resend currently runs in test mode — mail is delivered to the account owner's inbox only — until a domain is verified and `RESEND_FROM`/`CLAIM_BASE` flip on the store.
+- **`/network?t=…`** — a valid claim token pre-fills the member's name, role, desk and serial; they add a photo and download the card.
+
+The store itself is a small Node service (`ifg-network.service`) on the box at `127.0.0.1:4100`, fronted by nginx on 443 under a private CA with an IP SAN; the Vercel functions pin that CA. No database port is exposed. When a domain is pointed at the box, only the cert, `IFG_STORE_URL` and the store's mail settings change.
 
 ## Release
 

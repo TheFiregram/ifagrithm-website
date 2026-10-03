@@ -1,0 +1,155 @@
+/* ============================================================
+   /admin — network applications console. Same language as the
+   site and the card studio: near-black, one gold accent, mono
+   details. Deliberately plain: it is a work surface.
+   ============================================================ */
+
+.adm-wrap {
+  min-height: 100vh;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding: 34px clamp(16px, 4vw, 48px) 80px;
+}
+
+.adm-eyebrow {
+  font-family: var(--font-mono), monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  color: var(--accent, #e5be31);
+  margin: 0 0 8px;
+}
+.adm-head h1,
+.adm-login h1 {
+  font-family: var(--font-display), sans-serif;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--text, #f4efe2);
+}
+
+.adm-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.adm-head-actions { display: flex; gap: 10px; }
+
+/* login */
+.adm-login {
+  max-width: 380px;
+  margin: 18vh auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 34px 30px 30px;
+}
+.adm-login input {
+  background: #101014;
+  border: 1px solid #232329;
+  border-radius: 10px;
+  color: var(--text, #f4efe2);
+  font-size: 14px;
+  padding: 12px 14px;
+  outline: none;
+}
+.adm-login input:focus { border-color: rgba(229, 190, 49, 0.55); box-shadow: 0 0 0 3px rgba(229, 190, 49, 0.12); }
+
+.adm-gold {
+  appearance: none;
+  border: none;
+  background: var(--accent, #e5be31);
+  color: #141005;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 10px;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+.adm-gold:hover:not(:disabled) { filter: brightness(1.08); }
+.adm-gold:active:not(:disabled) { transform: translateY(1px); }
+.adm-gold:disabled { opacity: 0.5; cursor: default; }
+
+.adm-ghost {
+  appearance: none;
+  background: none;
+  border: 1px solid #2c2c33;
+  border-radius: 10px;
+  color: #b9b5a6;
+  font-size: 13px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.adm-ghost:hover { color: var(--text, #f4efe2); border-color: rgba(229, 190, 49, 0.45); }
+
+.adm-error { color: #e0764a; font-size: 13.5px; margin: 6px 0 0; }
+.adm-status { color: #8f8b7d; font-size: 14px; }
+
+/* table */
+.adm-table-wrap {
+  margin-top: 26px;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+}
+.adm-table { width: 100%; border-collapse: collapse; min-width: 980px; }
+.adm-table th {
+  text-align: left;
+  font-family: var(--font-mono), monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8f8b7d;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+.adm-table td {
+  vertical-align: top;
+  padding: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  color: #b9b5a6;
+  line-height: 1.5;
+}
+.adm-table tbody tr:last-child td { border-bottom: none; }
+.adm-table tbody tr[data-status="approved"] { background: rgba(229, 190, 49, 0.03); }
+
+.adm-table td > span { display: block; }
+.adm-strong { color: var(--text, #f4efe2); font-weight: 600; }
+.adm-dim { color: #6f6c60; font-size: 12px; }
+.adm-serial { font-family: var(--font-mono), monospace; color: var(--accent, #e5be31); }
+
+.adm-proof details summary {
+  cursor: pointer;
+  color: #8f8b7d;
+  font-size: 12.5px;
+  list-style: none;
+}
+.adm-proof details summary::before { content: "▸ "; color: var(--accent, #e5be31); }
+.adm-proof details[open] summary::before { content: "▾ "; }
+.adm-proof details p { margin: 8px 0 0; max-width: 260px; word-break: break-word; color: #b9b5a6; }
+
+.adm-pill {
+  display: inline-block;
+  font-family: var(--font-mono), monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  padding: 5px 11px;
+}
+.adm-pill.pending { border: 1px solid rgba(224, 118, 74, 0.5); color: #e0764a; }
+.adm-pill.approved { border: 1px solid rgba(229, 190, 49, 0.55); color: var(--accent, #e5be31); background: rgba(229, 190, 49, 0.08); }
+
+.adm-table td:last-child { min-width: 170px; }
+.adm-table td:last-child .adm-gold,
+.adm-table td:last-child .adm-ghost { display: inline-block; }
+.adm-note { display: block; margin-top: 8px; font-size: 12px; color: #8f8b7d; max-width: 200px; word-break: break-all; }
+
+@media (max-width: 700px) {
+  .adm-login { margin-top: 10vh; }
+}
