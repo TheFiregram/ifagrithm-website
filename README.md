@@ -33,6 +33,15 @@ No research showcase is published in this release: the website repository contai
 
 `components/Site.tsx` retains the existing email, X and LinkedIn destinations. The four-field form validates required entries and opens an encoded email brief. The visitor reviews and sends it in their email app. Clipboard success is shown only after a successful write; a selectable brief is available when copying fails. No message is sent or stored by the website.
 
+## Research network pages
+
+Two additional routes support the research network:
+
+- **`/application`** — the join-the-network application (replaces the external Tally form). Sectioned form: identity (name, X, Telegram, email, country), role selection (Research Scout / Research Analyst) with desk chips, proof-of-work links, and motivation. Submission composes a structured email to IFAGRITHM — nothing is stored server-side, matching the brief form. The homepage nav and footer link here. Section copy beyond the identity fields is drafted for sign-off.
+- **`/network`** — internal card studio (noindex). Renders a member's network card at exactly 1080×1350 and exports it as a PNG in-browser via `html-to-image` (the only dependency added by these routes; three.js remains the other). Photo comes from an upload or an X handle resolved through `/api/avatar` (same-origin proxy over unavatar.io; monogram fallback). Tier colors are the one semantic exception to the single-accent rule.
+
+The production approval flow (application review → approval mail → pre-filled card link) is not built yet; the studio currently runs on editable sample data.
+
 ## Release
 
 Use the existing private `olamilekanalaga/IFAGRITHM-Website` repository and `main` branch. Never force-push. The existing Vercel project is `ifagrithm-website`, project ID `prj_jroQgUuUH4LtyKpqjbmaqWg9CQZW`, under `olamilekans-projects-6812339f`.

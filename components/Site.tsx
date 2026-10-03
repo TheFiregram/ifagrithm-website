@@ -243,6 +243,7 @@ export default function Site() {
           <a href="#services" onClick={() => setMenu(false)}>Services</a>
           <a href="#approach" onClick={() => setMenu(false)}>Approach</a>
           <a href="#faq" onClick={() => setMenu(false)}>FAQ</a>
+          <a href="/application" onClick={() => setMenu(false)}>Join the network</a>
           <a className="nav-cta" href="#contact" onClick={() => setMenu(false)}>Discuss a project <Arrow diagonal /></a>
         </nav>
         <div className="nav-actions">
@@ -359,6 +360,6 @@ export default function Site() {
       </section>
     </main>
 
-    <footer className="site-footer"><div className="shell footer-inner"><div><Brand /><p>Web3 research. Clearer decisions.</p></div><nav aria-label="Footer navigation"><a href="#services">Services</a><a href="#faq">FAQ</a><a href="#contact">Contact</a><a href={X_URL} target="_blank" rel="noopener noreferrer">X <Arrow diagonal /></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow diagonal /></a></nav><small>© {new Date().getFullYear()} IFAGRITHM</small></div><div className="footer-ghost" aria-hidden="true">IFAGRITHM</div></footer>
+    <footer className="site-footer"><div className="shell footer-inner"><div><Brand /><p>Web3 research. Clearer decisions.</p></div><nav aria-label="Footer navigation"><a href="#services">Services</a><a href="#faq">FAQ</a><a href="#contact">Contact</a><a href="/application">Join the network</a><a href={X_URL} target="_blank" rel="noopener noreferrer">X <Arrow diagonal /></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow diagonal /></a></nav><small>© {new Date().getFullYear()} IFAGRITHM</small></div><div className="footer-ghost" aria-hidden="true">IFAGRITHM</div></footer>
   </>;
 }
