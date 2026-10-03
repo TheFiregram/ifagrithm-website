@@ -69,6 +69,10 @@ export function approveApplication(id: number) {
   return call<{ ok?: boolean; claim_url?: string; mail?: { skipped: boolean }; error?: string }>("/approve", { method: "POST", body: { id } });
 }
 
+export function rejectApplication(id: number) {
+  return call<{ ok?: boolean; mail?: { skipped: boolean }; error?: string }>("/reject", { method: "POST", body: { id } });
+}
+
 export function resolveClaim(token: string) {
   return call<{ serial: string; name: string; role: string; desk: string; error?: string }>(`/claim/${token}`);
 }

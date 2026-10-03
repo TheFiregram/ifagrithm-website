@@ -129,9 +129,54 @@
   font-size: 12.5px;
   list-style: none;
 }
-.adm-proof details summary::before { content: "▸ "; color: var(--accent, #e5be31); }
-.adm-proof details[open] summary::before { content: "▾ "; }
-.adm-proof details p { margin: 8px 0 0; max-width: 260px; word-break: break-word; color: #b9b5a6; }
+.adm-view {
+  appearance: none;
+  background: none;
+  border: 1px solid #2c2c33;
+  border-radius: 8px;
+  color: #b9b5a6;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.adm-view:hover { color: var(--accent, #e5be31); border-color: rgba(229, 190, 49, 0.45); }
+.adm-view[aria-expanded="true"] { color: var(--accent, #e5be31); border-color: rgba(229, 190, 49, 0.45); }
+
+/* full-width expansion row — long responses get room */
+.adm-table tr.is-open td { background: rgba(255, 255, 255, 0.025); }
+.adm-expand td { background: rgba(255, 255, 255, 0.015); padding: 20px 22px 24px; }
+.adm-expand-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 30px;
+  max-width: 980px;
+}
+.adm-expand h4 {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent, #e5be31);
+  margin: 0 0 8px;
+}
+.adm-expand section + section, .adm-expand h4 + p { margin-top: 0; }
+.adm-expand h4:not(:first-child) { margin-top: 20px; }
+.adm-expand p.pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.65;
+  font-size: 13.5px;
+  color: #c9c5b6;
+}
+@media (max-width: 760px) {
+  .adm-expand-grid { grid-template-columns: 1fr; gap: 22px; }
+}
 
 .adm-pill {
   display: inline-block;
@@ -144,6 +189,11 @@
 }
 .adm-pill.pending { border: 1px solid rgba(224, 118, 74, 0.5); color: #e0764a; }
 .adm-pill.approved { border: 1px solid rgba(229, 190, 49, 0.55); color: var(--accent, #e5be31); background: rgba(229, 190, 49, 0.08); }
+.adm-pill.rejected { border: 1px solid rgba(255, 255, 255, 0.18); color: #8f8b7d; background: rgba(255, 255, 255, 0.03); }
+
+.adm-actions { display: flex; flex-direction: column; gap: 8px; }
+.adm-actions .adm-gold,
+.adm-actions .adm-ghost { display: block; width: 100%; text-align: center; }
 
 .adm-table td:last-child { min-width: 170px; }
 .adm-table td:last-child .adm-gold,

@@ -4,7 +4,7 @@
 // approves and mails the congratulations with a card claim link.
 // Look borrowed from the Student Connect admin, weight not included.
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import "./admin.css";
 
 type Application = {
@@ -32,6 +32,7 @@ export default function AdminConsole() {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [notes, setNotes] = useState<Record<number, string>>({});
+  const [openId, setOpenId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/applications", { cache: "no-store" });
@@ -81,6 +82,28 @@ export default function AdminConsole() {
         : "Approved. Congratulations mail on its way." }));
     } catch {
       setError("Approve failed — store unreachable.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function reject(id: number) {
+    setBusyId(id);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/reject", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || "Reject failed."); return; }
+      setApps(rows => rows.map(r => r.id === id ? { ...r, status: "rejected", claim_token: null } : r));
+      setNotes(n => ({ ...n, [id]: data.mail?.skipped
+        ? "Rejected. Mail skipped — no Resend key on the store yet."
+        : "Rejected. Decline mail on its way." }));
+    } catch {
+      setError("Reject failed — store unreachable.");
     } finally {
       setBusyId(null);
     }
@@ -143,59 +166,90 @@ export default function AdminConsole() {
             <thead>
               <tr>
                 <th>Serial</th><th>Applicant</th><th>Reach</th><th>Role / desk</th>
-                <th>Proof</th><th>Why</th><th>Status</th><th>Action</th>
+                <th></th><th>Status</th><th>Action</th>
               </tr>
             </thead>
             <tbody>
               {apps.map(app => (
-                <tr key={app.id} data-status={app.status}>
-                  <td>
-                    <span className="adm-serial">{app.serial}</span>
-                    <span className="adm-dim">{new Date(app.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span>
-                  </td>
-                  <td>
-                    <span className="adm-strong">{app.full_name}</span>
-                    <span className="adm-dim">{app.country}</span>
-                  </td>
-                  <td>
-                    <span>{app.x_handle}</span>
-                    <span>{app.telegram}</span>
-                    <span>{app.email}</span>
-                  </td>
-                  <td>
-                    <span className="adm-strong">{app.role === "scout" ? "Scout" : "Analyst"}</span>
-                    <span>{app.desks.join(", ")}</span>
-                  </td>
-                  <td className="adm-proof">
-                    <details>
-                      <summary>proof of work</summary>
-                      <p>{app.links}</p>
-                      {app.context ? <p>{app.context}</p> : null}
-                    </details>
-                  </td>
-                  <td className="adm-proof">
-                    <details>
-                      <summary>why</summary>
-                      <p>{app.why}</p>
-                    </details>
-                  </td>
-                  <td><span className={`adm-pill ${app.status}`}>{app.status}</span></td>
-                  <td>
-                    {app.status === "pending" ? (
+                <Fragment key={app.id}>
+                  <tr data-status={app.status} className={openId === app.id ? "is-open" : ""}>
+                    <td>
+                      <span className="adm-serial">{app.serial}</span>
+                      <span className="adm-dim">{new Date(app.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span>
+                    </td>
+                    <td>
+                      <span className="adm-strong">{app.full_name}</span>
+                      <span className="adm-dim">{app.country}</span>
+                    </td>
+                    <td>
+                      <span>{app.x_handle}</span>
+                      <span>{app.telegram}</span>
+                      <span>{app.email}</span>
+                    </td>
+                    <td>
+                      <span className="adm-strong">{app.role === "scout" ? "Scout" : "Analyst"}</span>
+                      <span>{app.desks.join(", ")}</span>
+                    </td>
+                    <td>
                       <button
-                        className="adm-gold"
+                        className="adm-view"
                         type="button"
-                        disabled={busyId === app.id}
-                        onClick={() => approve(app.id)}
+                        aria-expanded={openId === app.id}
+                        onClick={() => setOpenId(current => current === app.id ? null : app.id)}
                       >
-                        {busyId === app.id ? "…" : "Approve"}
+                        {openId === app.id ? "Hide" : "View"}
                       </button>
-                    ) : (
-                      <button className="adm-ghost" type="button" onClick={() => copyClaim(app.id)}>Copy claim link</button>
-                    )}
-                    {notes[app.id] ? <span className="adm-note">{notes[app.id]}</span> : null}
-                  </td>
-                </tr>
+                    </td>
+                    <td><span className={`adm-pill ${app.status}`}>{app.status}</span></td>
+                    <td>
+                      {app.status === "pending" ? (
+                        <span className="adm-actions">
+                          <button
+                            className="adm-gold"
+                            type="button"
+                            disabled={busyId === app.id}
+                            onClick={() => approve(app.id)}
+                          >
+                            {busyId === app.id ? "…" : "Approve"}
+                          </button>
+                          <button
+                            className="adm-ghost"
+                            type="button"
+                            disabled={busyId === app.id}
+                            onClick={() => reject(app.id)}
+                          >
+                            Reject
+                          </button>
+                        </span>
+                      ) : app.status === "approved" ? (
+                        <button className="adm-ghost" type="button" onClick={() => copyClaim(app.id)}>Copy claim link</button>
+                      ) : null}
+                      {notes[app.id] ? <span className="adm-note">{notes[app.id]}</span> : null}
+                    </td>
+                  </tr>
+                  {openId === app.id ? (
+                    <tr className="adm-expand">
+                      <td colSpan={7}>
+                        <div className="adm-expand-grid">
+                          <section>
+                            <h4>Proof of work</h4>
+                            <p className="pre">{app.links}</p>
+                            {app.context ? (
+                              <>
+                                <h4>Context</h4>
+                                <p className="pre">{app.context}</p>
+                              </>
+                            ) : null}
+                          </section>
+                          <section>
+                            <h4>Why IFAGRITHM</h4>
+                            <p className="pre">{app.why}</p>
+                          </section>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : null}
+                </Fragment>
               ))}
             </tbody>
           </table>

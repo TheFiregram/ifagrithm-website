@@ -43,7 +43,7 @@ Two additional routes support the research network:
 The production approval flow is live:
 
 - **`/api/apply`** — `/application` posts here; the route forwards to the network store on the Contabo box (applications of record live in the `ifagrithm` database in the existing PostgreSQL 16 cluster, loopback-only). If the store is unreachable the form tells the applicant to use the copy fallback, so nothing is silently lost.
-- **`/admin`** — password-gated console (one shared password, HMAC-signed cookie). Lists the queue; **Approve** marks the row approved, mints a claim token and mails the congratulations with a `/network?t=` link through Resend. Resend currently runs in test mode — mail is delivered to the account owner's inbox only — until a domain is verified and `RESEND_FROM`/`CLAIM_BASE` flip on the store.
+- **`/admin`** — password-gated console (one shared password, HMAC-signed cookie). Lists the queue; **Approve** marks the row approved, mints a claim token and mails the congratulations with a `/network?t=` link through Resend; **Reject** marks it rejected, kills any claim link, and sends a polite decline. Resend currently runs in test mode — mail is delivered to the account owner's inbox only — until a domain is verified and `RESEND_FROM`/`CLAIM_BASE` flip on the store.
 - **`/network?t=…`** — a valid claim token pre-fills the member's name, role, desk and serial; they add a photo and download the card.
 
 The store itself is a small Node service (`ifg-network.service`) on the box at `127.0.0.1:4100`, fronted by nginx on 443 under a private CA with an IP SAN; the Vercel functions pin that CA. No database port is exposed. When a domain is pointed at the box, only the cert, `IFG_STORE_URL` and the store's mail settings change.
