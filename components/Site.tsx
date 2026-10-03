@@ -184,7 +184,19 @@ export default function Site() {
   const [status, setStatus] = useState("");
   const [copyFallback, setCopyFallback] = useState("");
   const [brief, setBrief] = useState({ name: "", email: "", company: "", question: "" });
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const menuButton = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("ifg-theme", next); } catch { /* private mode */ }
+    setTheme(next);
+  }
 
   useEffect(() => {
     if (!menu) return;
@@ -247,6 +259,13 @@ export default function Site() {
           <a className="nav-cta" href="#contact" onClick={() => setMenu(false)}>Discuss a project <Arrow diagonal /></a>
         </nav>
         <div className="nav-actions">
+          <button className="icon-button theme-toggle" type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} title="Toggle theme">
+            {theme === "dark" ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4.4" stroke="currentColor" strokeWidth="1.6" /><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5m14 0h2.4M5.3 5.3l1.7 1.7m9.9 9.9 1.7 1.7m0-13.4-1.7 1.7M7 17l-1.7 1.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
+            )}
+          </button>
           <button ref={menuButton} className="icon-button menu-button" type="button" onClick={() => setMenu(current => !current)} aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} aria-controls="primary-navigation"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={menu ? "m6 6 12 12M6 18 18 6" : "M4 8h16M4 16h16"} stroke="currentColor" strokeWidth="1.5" /></svg></button>
         </div>
       </div>

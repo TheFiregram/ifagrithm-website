@@ -11,6 +11,7 @@ import "./application.css";
 const EMAIL = "Ifagrithm@gmail.com";
 const ROLES = [
   { id: "scout", title: "Research Scout", line: "Spot the communities, apps and behaviour shifts worth investigating, early." },
+  { id: "partnership", title: "Partnership", line: "Bring IFAGRITHM in as a research partner for your team, project or community." },
   { id: "analyst", title: "Research Analyst", line: "Run structured investigations and turn raw onchain evidence into findings." },
 ] as const;
 const DESKS = ["Consumer apps", "DeFi", "RWA", "Infrastructure", "Market intel"];
@@ -24,6 +25,10 @@ const EMPTY: Application = {
   fullName: "", x: "", telegram: "", email: "", country: "",
   role: "", desks: [], links: "", context: "", why: "",
 };
+
+function roleLabel(role: string): string {
+  return role === "scout" ? "Research Scout" : role === "analyst" ? "Research Analyst" : "Partnership";
+}
 
 function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   return diagonal ? (
@@ -79,7 +84,7 @@ export default function ApplicationForm() {
       `Telegram: ${form.telegram.trim()}`,
       `Email: ${form.email.trim()}`,
       `Country: ${form.country.trim()}`,
-      `Role: ${form.role === "scout" ? "Research Scout" : form.role === "analyst" ? "Research Analyst" : "Not selected"}`,
+      `Role: ${roleLabel(form.role)}`,
       `Desks: ${form.desks.join(", ") || "None selected"}`,
       "",
       "Proof of work (links):",
@@ -252,10 +257,10 @@ export default function ApplicationForm() {
             <fieldset className="apply-block" data-reveal>
               <legend><i>03</i> Proof of work</legend>
               <label htmlFor="ap-links"><span>Links to things you have researched, built or published <span aria-hidden="true">*</span></span>
-                <textarea id="ap-links" required rows={3} maxLength={1200} placeholder="X threads, Dune dashboards, GitHub, Notion, articles — one per line" value={form.links} onChange={e => set("links", e.target.value)} />
+                <textarea id="ap-links" required rows={3} maxLength={4000} placeholder="X threads, Dune dashboards, GitHub, Notion, articles — one per line" value={form.links} onChange={e => set("links", e.target.value)} />
               </label>
               <label htmlFor="ap-context"><span>Anything we should know about them <span className="apply-optional">(optional)</span></span>
-                <textarea id="ap-context" rows={3} maxLength={800} value={form.context} onChange={e => set("context", e.target.value)} />
+                <textarea id="ap-context" rows={3} maxLength={2000} value={form.context} onChange={e => set("context", e.target.value)} />
               </label>
             </fieldset>
 
@@ -263,7 +268,7 @@ export default function ApplicationForm() {
             <fieldset className="apply-block" data-reveal>
               <legend><i>04</i> Why you</legend>
               <label htmlFor="ap-why"><span>What makes you a fit for the network? <span aria-hidden="true">*</span></span>
-                <textarea id="ap-why" required rows={5} maxLength={1600} value={form.why} onChange={e => set("why", e.target.value)} />
+                <textarea id="ap-why" required rows={5} maxLength={4000} value={form.why} onChange={e => set("why", e.target.value)} />
               </label>
             </fieldset>
 

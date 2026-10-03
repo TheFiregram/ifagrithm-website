@@ -260,6 +260,8 @@
 /* ---------- the card (1080 x 1350, exact) ---------- */
 
 .ifg-card {
+  /* the card wears its clearance: gold by default, silver or bronze override */
+  --ca: #e5be31;
   position: absolute;
   inset: 0 auto auto 0;
   width: 1080px;
@@ -270,14 +272,16 @@
   overflow: hidden;
   font-family: var(--font-body), sans-serif;
 }
+.ifg-card[data-tier="silver"] { --ca: #ccd3de; }
+.ifg-card[data-tier="bronze"] { --ca: #cd8a52; }
 
-/* ambient: gold fog from upper left like the site hero, plus vignette */
+/* ambient: fog in the card's own accent from upper left, plus vignette */
 .ifg-card-bg {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(760px 500px at 16% 10%, rgba(229, 190, 49, 0.13), transparent 62%),
-    radial-gradient(560px 360px at 88% 86%, rgba(229, 190, 49, 0.05), transparent 60%),
+    radial-gradient(760px 500px at 16% 10%, color-mix(in srgb, var(--ca) 13%, transparent), transparent 62%),
+    radial-gradient(560px 360px at 88% 86%, color-mix(in srgb, var(--ca) 5%, transparent), transparent 60%),
     radial-gradient(140% 100% at 50% 42%, transparent 52%, rgba(0, 0, 0, 0.52) 100%);
 }
 .ifg-card-bg::after {
@@ -293,20 +297,20 @@
 .ifg-frame {
   position: absolute;
   inset: 24px;
-  border: 1px solid rgba(229, 190, 49, 0.4);
+  border: 1px solid color-mix(in srgb, var(--ca) 40%, transparent);
   pointer-events: none;
 }
 .ifg-frame::after {
   content: "";
   position: absolute;
   inset: 12px;
-  border: 1px solid rgba(229, 190, 49, 0.14);
+  border: 1px solid color-mix(in srgb, var(--ca) 14%, transparent);
 }
 .ifg-corner {
   position: absolute;
   width: 64px;
   height: 64px;
-  border: 0 solid var(--igold);
+  border: 0 solid var(--ca);
   opacity: 0.9;
 }
 .c-tl { top: 24px; left: 24px; border-top-width: 3px; border-left-width: 3px; }
@@ -322,7 +326,7 @@
   height: 260px;
   background: repeating-linear-gradient(
     135deg,
-    rgba(229, 190, 49, 0.22) 0 3px,
+    color-mix(in srgb, var(--ca) 22%, transparent) 0 3px,
     transparent 3px 9px
   );
   opacity: 0.55;
@@ -339,7 +343,7 @@
   height: 92px;
   min-width: 620px;
   clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% calc(100% - 16px), calc(100% - 16px) 100%, 16px 100%, 0 calc(100% - 16px), 0 16px);
-  background: rgba(229, 190, 49, 0.5);
+  background: color-mix(in srgb, var(--ca) 50%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -359,8 +363,8 @@
   width: 60px;
   height: 60px;
   object-fit: cover;
-  mix-blend-mode: screen;
-  filter: brightness(1.15);
+  background: #000;
+  border-radius: 50%;
 }
 .ifg-badge-name {
   font-family: var(--font-display), sans-serif;
@@ -375,8 +379,8 @@
   font-weight: 500;
   font-size: 19px;
   letter-spacing: 0.3em;
-  color: var(--igold-dim);
-  border-left: 1px solid rgba(229, 190, 49, 0.35);
+  color: color-mix(in srgb, var(--ca) 60%, #8f8b7d);
+  border-left: 1px solid color-mix(in srgb, var(--ca) 35%, transparent);
   padding-left: 26px;
   line-height: 1;
 }
@@ -401,7 +405,7 @@
     0 calc(100% - 130px),
     0 42px
   );
-  background: rgba(229, 190, 49, 0.55);
+  background: color-mix(in srgb, var(--ca) 55%, transparent);
 }
 .ifg-photo::before {
   content: "";
@@ -468,8 +472,9 @@
   width: 340px;
   height: 340px;
   object-fit: cover;
-  mix-blend-mode: screen;
-  opacity: 0.5;
+  background: #000;
+  border-radius: 50%;
+  opacity: 0.55;
 }
 .ifg-monogram span {
   position: relative;
@@ -477,14 +482,15 @@
   font-weight: 700;
   font-size: 210px;
   letter-spacing: 0.04em;
-  color: rgba(229, 190, 49, 0.92);
-  text-shadow: 0 0 60px rgba(229, 190, 49, 0.25);
+  color: color-mix(in srgb, var(--ca) 92%, transparent);
+  text-shadow: 0 0 60px color-mix(in srgb, var(--ca) 25%, transparent);
 }
 
-.ifg-photo-chip,
-.ifg-photo-serial {
+.ifg-photo-chip {
   position: absolute;
   top: 30px;
+  left: 30px;
+  z-index: 2;
   font-family: var(--font-mono), monospace;
   font-weight: 500;
   font-size: 19px;
@@ -493,12 +499,8 @@
   padding: 13px 20px;
   clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 9px 100%, 0 50%);
   background: rgba(6, 6, 7, 0.82);
-  color: var(--igold);
+  color: var(--ca);
 }
-.ifg-photo-chip { left: 30px; }
-.ifg-photo-serial { right: 30px; color: rgba(229, 190, 49, 0.6); }
-/* chips must ignore the window clip */
-.ifg-photo-chip, .ifg-photo-serial { z-index: 2; }
 
 .ifg-photo-sheen {
   position: absolute;
@@ -572,7 +574,7 @@
   line-height: 1.2;
   letter-spacing: 0.24em;
   text-align: center;
-  color: var(--igold);
+  color: var(--ca);
   white-space: nowrap;
 }
 
@@ -598,7 +600,7 @@
   inset: 2px;
   clip-path: polygon(15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px), 0 15px);
   background:
-    repeating-linear-gradient(135deg, rgba(229, 190, 49, 0.09) 0 8px, transparent 8px 18px),
+    repeating-linear-gradient(135deg, color-mix(in srgb, var(--ca) 9%, transparent) 0 8px, transparent 8px 18px),
     #0b0a08;
 }
 .ifg-card[data-tier="bronze"] .ifg-tier { --tier: #cf8f4e; }
@@ -633,7 +635,7 @@
   line-height: 1.5;
   letter-spacing: 0.06em;
   text-align: center;
-  color: var(--igold-dim);
+  color: color-mix(in srgb, var(--ca) 62%, #6b6250);
   text-transform: uppercase;
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -652,31 +654,17 @@
   justify-content: center;
   gap: 22px;
 }
-.ifg-foot-side {
-  font-family: var(--font-mono), monospace;
-  font-weight: 500;
-  font-size: 15px;
-  letter-spacing: 0.22em;
-  line-height: 1;
-  white-space: nowrap;
-  color: rgba(229, 190, 49, 0.55);
-  display: flex;
-  align-items: center;
-  gap: 22px;
-}
-.ifg-foot-side.left::after,
-.ifg-foot-side.right::before {
-  content: "";
-  width: 52px;
+.ifg-foot-line {
+  width: 130px;
   height: 1px;
-  background: rgba(229, 190, 49, 0.35);
+  background: color-mix(in srgb, var(--ca) 35%, transparent);
 }
 .ifg-foot-plate img {
   width: 44px;
   height: 44px;
   object-fit: cover;
-  mix-blend-mode: screen;
-  opacity: 0.9;
+  background: #000;
+  border-radius: 50%;
 }
 
 /* ---------- entrance choreography ---------- */

@@ -1,10 +1,11 @@
 "use client";
 
 // IFAGRITHM Network Card Studio.
-// An approved member's details become a shareable portrait card, rendered
-// at exactly 1080x1350 and exported client-side as PNG. This screen is the
-// design surface; the production flow will inject an approved applicant's
-// record instead of the editable sample.
+// An approved member arrives via their claim link (/network?t=...) and the
+// card comes pre-filled from their application — name, role, desk, clearance
+// tier and their X profile photo. They can still fetch a different X photo,
+// and everything exports client-side as a 1080x1350 PNG. Serial numbers
+// live only in the admin console, never on the card.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -12,13 +13,13 @@ import { useSearchParams } from "next/navigation";
 import { toPng } from "html-to-image";
 import "./network.css";
 
-const ROLES = ["RESEARCH SCOUT", "RESEARCH ANALYST"] as const;
+const ROLES = ["RESEARCH SCOUT", "PARTNERSHIP", "RESEARCH ANALYST"] as const;
 const TIERS = ["BRONZE", "SILVER", "GOLD"] as const;
-const DESKS = ["CONSUMER APPS", "DEFI", "RWA", "INFRASTRUCTURE", "MARKET INTEL"] as const;
+const DESK_LABELS = ["CONSUMER APPS", "DEFI", "RWA", "INFRASTRUCTURE", "MARKET INTEL"] as const;
 
 type Role = (typeof ROLES)[number];
 type Tier = (typeof TIERS)[number];
-type Desk = (typeof DESKS)[number];
+type Desk = "CONSUMER APPS" | "DEFI" | "RWA" | "INFRASTRUCTURE" | "MARKET INTEL";
 
 type CardData = {
   name: string;
@@ -27,7 +28,6 @@ type CardData = {
   desk: Desk;
   tagline: string;
   bio: string;
-  serial: string;
 };
 
 const SAMPLE: CardData = {
@@ -37,10 +37,9 @@ const SAMPLE: CardData = {
   desk: "DEFI",
   tagline: "Mapping liquidity flows across African markets",
   bio: "Traces wallet cohorts and liquidity migration across L2s, turning raw onchain noise into signal.",
-  serial: "IFG-2026-001",
 };
 
-// demo photo lives in /public; production swaps this for the member's upload
+// demo photo lives in /public; production swaps this for the member's X photo
 const SAMPLE_AVATAR = "/sample-dp.jpg";
 
 function initialsOf(name: string): string {
@@ -76,7 +75,6 @@ export default function CardStudio() {
   const shellRef = useRef<HTMLDivElement>(null);
   const nameRef = useRef<HTMLHeadingElement>(null);
   const taglineRef = useRef<HTMLParagraphElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof CardData>(key: K, value: CardData[K]) =>
     setData((d) => ({ ...d, [key]: value }));
@@ -85,6 +83,32 @@ export default function CardStudio() {
   // oblivion in background/headless tabs and the entrance would never run)
   useEffect(() => {
     setLive(true);
+  }, []);
+
+  // webfonts land after first paint — re-fit once they do
+  useEffect(() => {
+    let alive = true;
+    document.fonts.ready.then(() => { if (alive) setFontsTick((t) => t + 1); });
+    return () => { alive = false; };
+  }, []);
+
+  const fetchAvatar = useCallback(async (handle: string) => {
+    const clean = handle.trim().replace(/^@/, "");
+    if (!/^[A-Za-z0-9_]{1,15}$/.test(clean)) {
+      setXStatus("error");
+      return false;
+    }
+    setXStatus("loading");
+    try {
+      const res = await fetch(`/api/avatar?handle=${encodeURIComponent(clean)}`);
+      if (!res.ok) throw new Error(res.status === 404 ? "miss" : "error");
+      setAvatar(await readFileAsDataURL(await res.blob()));
+      setXStatus("idle");
+      return true;
+    } catch (err) {
+      setXStatus(err instanceof Error && err.message === "miss" ? "miss" : "error");
+      return false;
+    }
   }, []);
 
   // an approved member arrives via a claim link: /network?t=<token>
@@ -100,30 +124,26 @@ export default function CardStudio() {
         if (!res.ok) throw new Error();
         const info = await res.json();
         if (!alive) return;
-        const desk = DESKS.find(d => d === String(info.desk ?? "").toUpperCase());
+        const desk = DESK_LABELS.find(d => d === String(info.desk ?? "").toUpperCase());
+        const tier = TIERS.find(t => t === String(info.tier ?? "").toUpperCase());
         setData(d => ({
           ...d,
           name: info.name || d.name,
-          role: info.role === "RESEARCH ANALYST" ? "RESEARCH ANALYST" : "RESEARCH SCOUT",
+          role: (ROLES as readonly string[]).includes(info.role) ? info.role as Role : d.role,
           desk: desk ?? d.desk,
-          serial: info.serial || d.serial,
+          tier: tier ?? d.tier,
         }));
-        setAvatar(null);
+        setXHandle(info.x_handle ?? "");
+        setAvatar(null); // their card, their photo — fetched next line
         setClaim({ name: info.name ?? "", serial: info.serial ?? "" });
         setClaimState("ok");
+        if (info.x_handle) void fetchAvatar(String(info.x_handle));
       } catch {
         if (alive) setClaimState("invalid");
       }
     })();
     return () => { alive = false; };
-  }, [claimToken]);
-
-  // webfonts land after first paint — re-fit once they do
-  useEffect(() => {
-    let alive = true;
-    document.fonts.ready.then(() => { if (alive) setFontsTick((t) => t + 1); });
-    return () => { alive = false; };
-  }, []);
+  }, [claimToken, fetchAvatar]);
 
   // long names/taglines shrink to fit the card instead of overflowing
   useLayoutEffect(() => {
@@ -152,65 +172,53 @@ export default function CardStudio() {
     return () => ro.disconnect();
   }, []);
 
-  const fetchAvatarFromX = useCallback(async () => {
-    const handle = xHandle.trim().replace(/^@/, "");
-    if (!/^[A-Za-z0-9_]{1,15}$/.test(handle)) {
-      setXStatus("error");
-      return;
-    }
-    setXStatus("loading");
-    try {
-      const res = await fetch(`/api/avatar?handle=${encodeURIComponent(handle)}`);
-      if (!res.ok) throw new Error(res.status === 404 ? "miss" : "error");
-      setAvatar(await readFileAsDataURL(await res.blob()));
-      setXStatus("idle");
-    } catch (err) {
-      setXStatus(err instanceof Error && err.message === "miss" ? "miss" : "error");
-    }
-  }, [xHandle]);
-
-  const onUpload = useCallback(async (file: File | undefined) => {
-    if (!file) return;
-    if (file.size > 6 * 1024 * 1024) {
-      setExportNote("Photo is over 6 MB — pick a smaller one.");
-      return;
-    }
-    setExportNote(null);
-    setAvatar(await readFileAsDataURL(file));
-  }, []);
-
   const download = useCallback(async () => {
     const node = cardRef.current;
     if (!node || exporting) return;
     setExporting(true);
     setExportNote(null);
     node.classList.add("is-export");
+    const options = {
+      width: 1080,
+      height: 1350,
+      pixelRatio: 1,
+      backgroundColor: "#060607",
+      // the preview scales the card into its shell via transform on the
+      // node itself — the clone must render at natural size
+      style: { transform: "none", transformOrigin: "top left" as const },
+    };
     try {
       await document.fonts.ready;
-      const url = await toPng(node, {
-        width: 1080,
-        height: 1350,
-        pixelRatio: 1,
-        backgroundColor: "#060607",
-        // the preview scales the card into its shell via transform on the
-        // node itself — the clone must render at natural size
-        style: { transform: "none", transformOrigin: "top left" },
-      });
-      const link = document.createElement("a");
-      link.download = `IFAGRITHM-${data.serial.replace(/[^A-Za-z0-9-]/g, "") || "card"}.png`;
-      link.href = url;
-      link.click();
-    } catch {
-      setExportNote("Export failed — try again.");
+      // render twice: the first pass primes image/font inlining, which
+      // Safari and some mobile browsers otherwise miss (blank exports)
+      await toPng(node, options);
+      const url = await toPng(node, options);
+      const blob = await (await fetch(url)).blob();
+      const file = new File([blob], `IFAGRITHM-${data.name.trim().replace(/\s+/g, "-") || "card"}.png`, { type: "image/png" });
+      const nav = navigator as Navigator & { canShare?: (data: { files?: File[] }) => boolean };
+      // iOS Safari ignores the download attribute — hand it to the share
+      // sheet (Save Image), falling back to opening it in a new tab
+      if (nav.canShare?.({ files: [file] })) {
+        await nav.share!({ files: [file], title: "IFAGRITHM network card" });
+      } else {
+        const link = document.createElement("a");
+        link.download = file.name;
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 4000);
+      }
+    } catch (err) {
+      const aborted = err instanceof DOMException && err.name === "AbortError";
+      if (!aborted) setExportNote("Export failed — try again.");
     } finally {
       node.classList.remove("is-export");
       setExporting(false);
     }
-  }, [data.serial, exporting]);
+  }, [data.name, exporting]);
 
   const xNote =
     xStatus === "loading" ? "Resolving avatar…" :
-    xStatus === "miss" ? "No avatar on that handle — upload a photo instead." :
+    xStatus === "miss" ? "No avatar on that handle." :
     xStatus === "error" ? "That handle doesn't look right." : null;
 
   return (
@@ -240,29 +248,13 @@ export default function CardStudio() {
                   placeholder="@handle"
                   maxLength={16}
                   onChange={(e) => { setXHandle(e.target.value); setXStatus("idle"); }}
-                  onKeyDown={(e) => { if (e.key === "Enter") fetchAvatarFromX(); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") void fetchAvatar(xHandle); }}
                 />
-                <button type="button" className="ifg-btn" onClick={fetchAvatarFromX} disabled={xStatus === "loading"}>
+                <button type="button" className="ifg-btn" onClick={() => void fetchAvatar(xHandle)} disabled={xStatus === "loading"}>
                   Fetch
                 </button>
               </div>
               {xNote ? <em className="ifg-note">{xNote}</em> : null}
-            </div>
-            <div className="ifg-field">
-              <span>…or upload a photo</span>
-              <div className="ifg-inline">
-                <button type="button" className="ifg-btn" onClick={() => fileRef.current?.click()}>Choose image</button>
-                {avatar ? (
-                  <button type="button" className="ifg-btn ifg-btn-quiet" onClick={() => setAvatar(null)}>Remove</button>
-                ) : null}
-              </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={(e) => { onUpload(e.target.files?.[0]); e.target.value = ""; }}
-              />
             </div>
           </div>
 
@@ -286,6 +278,11 @@ export default function CardStudio() {
 
           <div className="ifg-fieldset">
             <span className="ifg-legend">Clearance</span>
+            <p className="ifg-hint">
+              {claimState === "ok"
+                ? "Set by your approval mail — the card wears its colour."
+                : "Sample only. Members receive theirs with the approval."}
+            </p>
             <div className="ifg-seg" role="radiogroup" aria-label="Clearance tier">
               {TIERS.map((tier) => (
                 <button
@@ -298,24 +295,6 @@ export default function CardStudio() {
                   onClick={() => set("tier", tier)}
                 >
                   <i aria-hidden /> {tier}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="ifg-fieldset">
-            <span className="ifg-legend">Desk</span>
-            <div className="ifg-chips" role="radiogroup" aria-label="Research desk">
-              {DESKS.map((desk) => (
-                <button
-                  key={desk}
-                  type="button"
-                  role="radio"
-                  aria-checked={data.desk === desk}
-                  className={data.desk === desk ? "on" : ""}
-                  onClick={() => set("desk", desk)}
-                >
-                  {desk}
                 </button>
               ))}
             </div>
@@ -340,22 +319,15 @@ export default function CardStudio() {
                 onChange={(e) => set("bio", e.target.value)}
               />
             </label>
-            <label className="ifg-field">
-              <span>Serial</span>
-              <input
-                value={data.serial}
-                maxLength={16}
-                onChange={(e) => set("serial", e.target.value.toUpperCase())}
-              />
-            </label>
           </div>
 
-          <button type="button" className="ifg-btn ifg-btn-quiet" onClick={() => setData(SAMPLE)}>
+          <button type="button" className="ifg-btn ifg-btn-quiet" onClick={() => { setData(SAMPLE); setAvatar(SAMPLE_AVATAR); setXHandle(""); }}>
             Reset to sample
           </button>
           <p className="ifg-panel-foot">
-            Sample data. In production this screen opens from an approval mail and
-            arrives pre-filled with the member&apos;s verified details.
+            {claimState === "ok" && claim
+              ? `Verified member ${claim.serial}. Your details came from the approval — add your photo and make it yours.`
+              : "Sample data. Members open this screen from their approval mail, pre-filled with verified details."}
           </p>
         </section>
 
@@ -405,13 +377,12 @@ export default function CardStudio() {
                   </div>
                 )}
                 <span className="ifg-photo-chip">{data.desk}</span>
-                <span className="ifg-photo-serial">{data.serial}</span>
                 <span className="ifg-photo-sheen" aria-hidden="true" />
               </figure>
 
               <div className="ifg-role" data-boot><span>{data.role}</span></div>
 
-              <h2 className="ifg-name" ref={nameRef} data-boot>{data.name.toUpperCase()}</h2>
+              <h2 className="ifg-name" ref={nameRef} data-boot>{data.name}</h2>
               <p className="ifg-tagline" ref={taglineRef} data-boot>{data.tagline.toUpperCase()}</p>
 
               <div className="ifg-tier" data-boot>
@@ -422,12 +393,12 @@ export default function CardStudio() {
               <p className="ifg-bio" data-boot>{data.bio.toUpperCase()}</p>
 
               <footer className="ifg-foot" data-boot>
-                <span className="ifg-foot-side left">{data.serial}</span>
+                <span className="ifg-foot-line" aria-hidden="true" />
                 <span className="ifg-foot-plate">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/ifagrithm-logo.png" alt="" />
                 </span>
-                <span className="ifg-foot-side right">WEB3 RESEARCH &amp; INTELLIGENCE</span>
+                <span className="ifg-foot-line" aria-hidden="true" />
               </footer>
             </div>
           </div>

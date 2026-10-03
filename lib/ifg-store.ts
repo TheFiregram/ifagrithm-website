@@ -33,6 +33,7 @@ export type StoreApplication = {
   context: string;
   why: string;
   status: string;
+  tier: string | null;
   claim_token: string | null;
   serial: string;
 };
@@ -65,8 +66,10 @@ export function listApplications() {
   return call<{ applications?: StoreApplication[]; error?: string }>("/applications");
 }
 
-export function approveApplication(id: number) {
-  return call<{ ok?: boolean; claim_url?: string; mail?: { skipped: boolean }; error?: string }>("/approve", { method: "POST", body: { id } });
+export function approveApplication(id: number, tier: string) {
+  return call<{ ok?: boolean; claim_url?: string; mail?: { skipped: boolean }; mail_error?: string; error?: string }>(
+    "/approve", { method: "POST", body: { id, tier } }
+  );
 }
 
 export function rejectApplication(id: number) {
@@ -74,5 +77,5 @@ export function rejectApplication(id: number) {
 }
 
 export function resolveClaim(token: string) {
-  return call<{ serial: string; name: string; role: string; desk: string; error?: string }>(`/claim/${token}`);
+  return call<{ serial: string; name: string; x_handle?: string; role: string; desk: string; tier?: string; error?: string }>(`/claim/${token}`);
 }

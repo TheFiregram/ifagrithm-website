@@ -14,10 +14,17 @@ const CLAIM_BASE = process.env.CLAIM_BASE || "https://ifagrithm-website.vercel.a
 
 const LIMITS = {
   full_name: 120, x_handle: 32, telegram: 32, email: 254, country: 80,
-  links: 1200, context: 800, why: 1600,
+  links: 4000, context: 2000, why: 4000,
 };
 const DESKS = ["Consumer apps", "DeFi", "RWA", "Infrastructure", "Market intel"];
-const ROLES = new Set(["scout", "analyst"]);
+const ROLES = new Set(["scout", "partnership", "analyst"]);
+const TIERS = new Set(["bronze", "silver", "gold"]);
+
+function roleLabel(role) {
+  return role === "scout" ? "Research Scout"
+    : role === "analyst" ? "Research Analyst"
+    : "Partnership";
+}
 
 function timingSafeEqual(a, b) {
   const ba = Buffer.from(String(a));
@@ -96,8 +103,8 @@ function mailHtml(app, claimUrl) {
     <h1 style="font-size:26px;margin:0 0 16px;color:#ffffff;">You're in, ${app.full_name}.</h1>
     <p style="font-size:15px;line-height:1.6;color:#b9b5a6;margin:0 0 22px;">
       Congratulations — your application to the IFAGRITHM research network has been approved.
-      You are joining as a <strong style="color:#e5be31;">${app.role === "scout" ? "Research Scout" : "Research Analyst"}</strong>
-      on the ${desk} desk.
+      You are joining as a <strong style="color:#e5be31;">${roleLabel(app.role)}</strong>
+      on the ${desk} desk, with <strong style="color:#e5be31;">${app.tier}</strong> clearance.
     </p>
     <p style="margin:0 0 28px;">
       <a href="${claimUrl}" style="background:#e5be31;color:#141005;font-weight:bold;font-size:15px;padding:14px 26px;border-radius:10px;text-decoration:none;display:inline-block;">Claim your network card</a>
@@ -184,15 +191,17 @@ const server = http.createServer(async (req, res) => {
     const claimMatch = url.pathname.match(/^\/claim\/([a-f0-9]{48})$/);
     if (req.method === "GET" && claimMatch) {
       const [row] = await sql`
-        SELECT id, full_name, role, desks, status, claimed_at
+        SELECT id, full_name, x_handle, role, desks, tier, status, claimed_at
         FROM applications WHERE claim_token = ${claimMatch[1]} LIMIT 1`;
       if (!row || row.status !== "approved") return send(res, 404, { error: "not found" });
       if (!row.claimed_at) await sql`UPDATE applications SET claimed_at = now() WHERE id = ${row.id}`;
       return send(res, 200, {
         serial: serialFor(row.id),
         name: row.full_name,
-        role: row.role === "scout" ? "RESEARCH SCOUT" : "RESEARCH ANALYST",
+        x_handle: row.x_handle,
+        role: roleLabel(row.role).toUpperCase(),
         desk: row.desks[0] ?? "",
+        tier: row.tier ?? "bronze",
       });
     }
 
@@ -201,20 +210,22 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && url.pathname === "/applications") {
       const rows = await sql`
-        SELECT id, created_at, full_name, x_handle, telegram, email, country, role, desks, links, context, why, status, claim_token
-        FROM applications ORDER BY id DESC LIMIT 100`;
+        SELECT id, created_at, full_name, x_handle, telegram, email, country, role, desks, links, context, why, status, tier, claim_token
+        FROM applications ORDER BY id DESC LIMIT 200`;
       return send(res, 200, { applications: rows.map(r => ({ ...r, serial: serialFor(r.id) })) });
     }
 
     if (req.method === "POST" && url.pathname === "/approve") {
       const body = await readJson(req);
       const id = Number(body.id);
+      const tier = String(body.tier || "").toLowerCase();
       if (!Number.isInteger(id) || id <= 0) return send(res, 400, { error: "id is required" });
+      if (!TIERS.has(tier)) return send(res, 400, { error: "clearance tier is required (bronze, silver or gold)" });
       const [row] = await sql`SELECT * FROM applications WHERE id = ${id} LIMIT 1`;
       if (!row) return send(res, 404, { error: "not found" });
       const token = row.claim_token ?? crypto.randomBytes(24).toString("hex");
       const [updated] = await sql`
-        UPDATE applications SET status = 'approved', claim_token = ${token}
+        UPDATE applications SET status = 'approved', claim_token = ${token}, tier = ${tier}
         WHERE id = ${id} RETURNING *`;
       let mail;
       let mail_error;

@@ -24,10 +24,12 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   openGraph: { title, description, type: "website", url: "/" },
   twitter: { card: "summary", title, description },
+  colorScheme: "dark",
 };
 
-// Dark is the brand look; applied before first paint so there is no flash.
-const themeScript = `document.documentElement.dataset.theme="dark"`;
+// Dark is the brand look; a stored preference wins, applied before first
+// paint so there is no flash.
+const themeScript = `try{var t=localStorage.getItem("ifg-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
