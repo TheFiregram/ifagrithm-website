@@ -79,6 +79,15 @@ function serialFor(id) {
   return `IFG-2026-${String(id).padStart(3, "0")}`;
 }
 
+// test-mode 403s are expected until a domain is verified — surface a short,
+// actionable reason instead of Resend's raw response
+function shortMailError(detail) {
+  if (detail.includes("testing emails")) {
+    return "Resend test mode can only mail the account owner (ghostofiyanu@gmail.com) — verify a domain to mail anyone";
+  }
+  return detail.slice(0, 120);
+}
+
 function mailHtml(app, claimUrl) {
   const desk = app.desks.join(", ");
   return `<!doctype html><html><body style="margin:0;background:#060607;font-family:Arial,Helvetica,sans-serif;">
@@ -208,13 +217,15 @@ const server = http.createServer(async (req, res) => {
         UPDATE applications SET status = 'approved', claim_token = ${token}
         WHERE id = ${id} RETURNING *`;
       let mail;
+      let mail_error;
       try {
         mail = await sendApprovalMail({ ...updated, serial: serialFor(updated.id) });
       } catch (err) {
         console.error("mail failed:", err.message);
-        return send(res, 502, { error: "approved but the mail failed — retry approve", detail: err.message.slice(0, 200) });
+        mail = { skipped: false, failed: true };
+        mail_error = shortMailError(err.message);
       }
-      return send(res, 200, { ok: true, claim_url: `${CLAIM_BASE}/network?t=${token}`, mail });
+      return send(res, 200, { ok: true, claim_url: `${CLAIM_BASE}/network?t=${token}`, mail, mail_error });
     }
 
     if (req.method === "POST" && url.pathname === "/reject") {
@@ -228,13 +239,15 @@ const server = http.createServer(async (req, res) => {
         UPDATE applications SET status = 'rejected', claim_token = NULL
         WHERE id = ${id} RETURNING *`;
       let mail;
+      let mail_error;
       try {
         mail = await sendDeclineMail(updated);
       } catch (err) {
         console.error("mail failed:", err.message);
-        return send(res, 502, { error: "rejected but the mail failed — retry reject", detail: err.message.slice(0, 200) });
+        mail = { skipped: false, failed: true };
+        mail_error = shortMailError(err.message);
       }
-      return send(res, 200, { ok: true, mail });
+      return send(res, 200, { ok: true, mail, mail_error });
     }
 
     send(res, 404, { error: "not found" });

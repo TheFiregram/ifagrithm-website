@@ -63,6 +63,13 @@ export default function ApplicationForm() {
     return () => io.disconnect();
   }, []);
 
+  // after a successful submit, walk them back to the site
+  useEffect(() => {
+    if (!submitted) return;
+    const t = setTimeout(() => { window.location.assign("/"); }, 9000);
+    return () => clearTimeout(t);
+  }, [submitted]);
+
   function applicationText(): string {
     return [
       "IFAGRITHM RESEARCH NETWORK APPLICATION",
@@ -176,7 +183,19 @@ export default function ApplicationForm() {
         </section>
 
         <div className="shell apply-grid">
-          <form className="apply-form" onSubmit={submit} noValidate>
+          {submitted ? (
+            <div className="apply-success" role="status">
+              <svg className="apply-check" viewBox="0 0 72 72" aria-hidden="true">
+                <circle cx="36" cy="36" r="33" />
+                <path d="M22 37.5 32 47.5 50 27" />
+              </svg>
+              <h2>Application received.</h2>
+              <p>We read every application and reply to each one. If it is a fit, you get an approval mail with your desk and a link to claim your card.</p>
+              <Link className="primary" href="/">Back to the site <Arrow diagonal /></Link>
+              <p className="apply-return-note">Taking you back to the site…</p>
+            </div>
+          ) : (
+            <form className="apply-form" onSubmit={submit} noValidate>
             {/* 01 — identity */}
             <fieldset className="apply-block" data-reveal>
               <legend><i>01</i> Your information</legend>
@@ -248,35 +267,27 @@ export default function ApplicationForm() {
               </label>
             </fieldset>
 
-            {submitted ? (
-              <div className="apply-done" data-reveal role="status">
-                <p className="apply-done-title">Application received.</p>
-                <p>We read every application and reply to each one. If it is a fit, you get an approval mail with your desk, your tier and a link to claim your network card.</p>
-              </div>
-            ) : (
-              <>
-                <div className="apply-actions" data-reveal>
-                  <button className="primary" type="submit" disabled={sending}>{sending ? "Sending…" : "Submit application"} <Arrow diagonal /></button>
-                  <button className="apply-copy" type="button" onClick={copyApplication}>Copy application <Arrow /></button>
-                </div>
-                <p className="apply-helper" data-reveal>Goes straight to the review inbox — we reply to every application we receive.</p>
-                <p className="apply-status" role="status" data-reveal>{status}</p>
-              </>
-            )}
+            <div className="apply-actions" data-reveal>
+              <button className="primary" type="submit" disabled={sending}>{sending ? "Sending…" : "Submit application"} <Arrow diagonal /></button>
+              <button className="apply-copy" type="button" onClick={copyApplication}>Copy application <Arrow /></button>
+            </div>
+            <p className="apply-helper" data-reveal>Goes straight to the review inbox — we reply to every application we receive.</p>
+            <p className="apply-status" role="status" data-reveal>{status}</p>
             {copyFallback && (
               <label className="apply-fallback" htmlFor="ap-fallback">Your application to copy
                 <textarea id="ap-fallback" readOnly value={copyFallback} rows={10} onFocus={e => e.currentTarget.select()} />
               </label>
             )}
-          </form>
+            </form>
+          )}
 
           <aside className="apply-side" data-reveal aria-label="What happens next">
             <p className="apply-side-eyebrow">WHAT HAPPENS NEXT</p>
             <ol className="apply-steps">
-              <li><span>01</span><div><h3>Apply</h3><p>Send the form — it lands straight in the review inbox.</p></div></li>
-              <li><span>02</span><div><h3>We review</h3><p>Every application is read. We look for signal, not pedigree.</p></div></li>
-              <li><span>03</span><div><h3>Approval mail</h3><p>If it is a fit, you get an email with your desk, tier and next steps.</p></div></li>
-              <li><span>04</span><div><h3>Claim your card</h3><p>Follow the link, add your photo or X, and mint your network card.</p></div></li>
+              <li><span>01</span><div><h3>Apply</h3><p>Fill the form and send it in.</p></div></li>
+              <li><span>02</span><div><h3>We review</h3><p>We read every application.</p></div></li>
+              <li><span>03</span><div><h3>You get a mail</h3><p>If it is a fit, we send you an approval mail.</p></div></li>
+              <li><span>04</span><div><h3>Your card</h3><p>Open the link, add your photo, download your card.</p></div></li>
             </ol>
           </aside>
         </div>

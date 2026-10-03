@@ -77,7 +77,9 @@ export default function AdminConsole() {
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Approve failed."); return; }
       setApps(rows => rows.map(r => r.id === id ? { ...r, status: "approved", claim_token: data.claim_url?.split("t=")[1] ?? r.claim_token } : r));
-      setNotes(n => ({ ...n, [id]: data.mail?.skipped
+      setNotes(n => ({ ...n, [id]: data.mail_error
+        ? `Approved. Mail failed — ${data.mail_error}`
+        : data.mail?.skipped
         ? "Approved. Mail skipped — no Resend key on the store yet."
         : "Approved. Congratulations mail on its way." }));
     } catch {
@@ -99,7 +101,9 @@ export default function AdminConsole() {
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Reject failed."); return; }
       setApps(rows => rows.map(r => r.id === id ? { ...r, status: "rejected", claim_token: null } : r));
-      setNotes(n => ({ ...n, [id]: data.mail?.skipped
+      setNotes(n => ({ ...n, [id]: data.mail_error
+        ? `Rejected. Mail failed — ${data.mail_error}`
+        : data.mail?.skipped
         ? "Rejected. Mail skipped — no Resend key on the store yet."
         : "Rejected. Decline mail on its way." }));
     } catch {
