@@ -7,10 +7,10 @@
 
 .ifg-studio {
   --igold: var(--accent, #e5be31);
-  --igold-dim: #a89762;
+  --igold-dim: var(--muted);
   --igold-faint: rgba(229, 190, 49, 0.38);
-  --iink: #f7f3e6;
-  --ipanel: #0d0d10;
+  --iink: var(--text);
+  --ipanel: var(--surface);
   min-height: 100vh;
   padding: 34px clamp(16px, 4vw, 56px) 72px;
   max-width: 1400px;
@@ -24,7 +24,7 @@
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #8b8779;
+  color: var(--muted);
   text-decoration: none;
 }
 .ifg-back:hover { color: var(--igold); }
@@ -66,7 +66,7 @@
 
 .ifg-panel {
   background: var(--ipanel);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--line);
   padding: 26px 24px 22px;
   display: flex;
   flex-direction: column;
@@ -85,13 +85,13 @@
 .ifg-field { display: flex; flex-direction: column; gap: 7px; }
 .ifg-field > span {
   font-size: 12.5px;
-  color: #b9b5a6;
+  color: var(--muted);
 }
-.ifg-field > span em { font-style: normal; color: #6f6c60; }
+.ifg-field > span em { font-style: normal; color: var(--muted); }
 .ifg-field input,
 .ifg-field textarea {
-  background: #101014;
-  border: 1px solid #232329;
+  background: var(--bg);
+  border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--iink);
   font-family: var(--font-body), sans-serif;
@@ -118,18 +118,18 @@
 /* segmented controls */
 .ifg-seg {
   display: flex;
-  border: 1px solid #232329;
+  border: 1px solid var(--line);
   border-radius: 10px;
   overflow: hidden;
-  background: #101014;
+  background: var(--bg);
 }
 .ifg-seg button {
   flex: 1;
   appearance: none;
   background: none;
   border: none;
-  border-right: 1px solid #232329;
-  color: #8f8b7d;
+  border-right: 1px solid var(--line);
+  color: var(--muted);
   font-family: var(--font-mono), monospace;
   font-size: 11.5px;
   letter-spacing: 0.08em;
@@ -160,10 +160,10 @@
 .ifg-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .ifg-chips button {
   appearance: none;
-  background: #101014;
-  border: 1px solid #232329;
+  background: var(--bg);
+  border: 1px solid var(--line);
   border-radius: 999px;
-  color: #8f8b7d;
+  color: var(--muted);
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   letter-spacing: 0.1em;
@@ -181,15 +181,15 @@
 .ifg-panel-foot {
   font-size: 12px;
   line-height: 1.55;
-  color: #6f6c60;
+  color: var(--muted);
   margin: 0;
 }
 
 /* buttons */
 .ifg-btn {
   appearance: none;
-  background: #141418;
-  border: 1px solid #2c2c33;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--iink);
   font-family: var(--font-body), sans-serif;
@@ -204,7 +204,7 @@
 .ifg-btn:hover:not(:disabled) { border-color: rgba(229, 190, 49, 0.5); }
 .ifg-btn:active:not(:disabled) { transform: translateY(1px); }
 .ifg-btn:disabled { opacity: 0.55; cursor: default; }
-.ifg-btn-quiet { border-color: transparent; color: #8f8b7d; }
+.ifg-btn-quiet { border-color: transparent; color: var(--muted); }
 .ifg-btn-quiet:hover:not(:disabled) { color: var(--iink); }
 .ifg-btn-gold {
   background: var(--igold);
@@ -254,12 +254,13 @@
   font-family: var(--font-mono), monospace;
   font-size: 11.5px;
   letter-spacing: 0.08em;
-  color: #6f6c60;
+  color: var(--muted);
 }
 
 /* ---------- the card (1080 x 1350, exact) ---------- */
 
 .ifg-card {
+  --iink: #f7f3e6;
   /* the card wears its clearance: gold by default, silver or bronze override */
   --ca: #e5be31;
   position: absolute;
@@ -719,3 +720,12 @@
 }
 .ifg-studio{--accent:var(--gold);--font-display:var(--sans);--font-mono:var(--sans);--igold:var(--gold)}.ifg-panel{border-radius:22px}.ifg-field input,.ifg-field textarea{font-size:16px}.ifg-card-serial{font-size:18px;letter-spacing:.13em;color:#a89762;position:absolute;top:30px;right:35px}.ifg-btn:disabled,.ifg-seg button:disabled{cursor:default}.ifg-field input:read-only{color:var(--gold)}
 .ifg-card-serial{top:auto;bottom:38px;right:60px;font-size:16px}.ifg-monogram img{opacity:.12}.ifg-monogram span{position:relative}
+
+/* The studio follows the page theme; the exported card keeps its brand colours. */
+.ifg-panel,.ifg-field,.ifg-fieldset{min-width:0}
+.ifg-head-title h1{font-size:clamp(24px,4vw,30px)}
+.ifg-field input,.ifg-field textarea{width:100%;min-width:0}
+.ifg-btn-gold{background:#ffc425;border-color:#ffc425}
+.ifg-card-shell{max-width:min(480px,100%);overflow:clip}
+html[data-theme=light] .ifg-seg button.on[data-tier="silver"]{color:#505966;background:rgba(80,89,102,.08)}
+@media(max-width:560px){.ifg-panel{padding:22px 16px}.ifg-seg button{font-size:10px;letter-spacing:0;gap:5px}.ifg-inline{flex-wrap:wrap}.ifg-inline input{flex-basis:100%}.ifg-head-chip{letter-spacing:.12em}}
