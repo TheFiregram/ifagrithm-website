@@ -1,331 +1,269 @@
 "use client";
 
-// Research network application, stored through the server API.
-// Copying the application provides a fallback if storage is unavailable.
-
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
+import { Arrow, BrandMark } from "./Brand";
+import { useTheme } from "./ThemeProvider";
 import "./application.css";
 
 const EMAIL = "Ifagrithm@gmail.com";
 const ROLES = [
-  { id: "scout", title: "Research Scout", line: "Spot the communities, apps and behaviour shifts worth investigating, early." },
-  { id: "partnership", title: "Partnership", line: "Bring IFAGRITHM in as a research partner for your team, project or community." },
-  { id: "analyst", title: "Research Analyst", line: "Run structured investigations and turn raw onchain evidence into findings." },
+  { id: "scout", title: "Research Scout", line: "Spot communities, apps and behaviour shifts worth investigating." },
+  { id: "partnership", title: "Partnership", line: "Bring IFAGRITHM in as a research partner for your team or project." },
+  { id: "analyst", title: "Research Analyst", line: "Turn onchain evidence and structured investigations into findings." },
 ] as const;
 const DESKS = ["Consumer apps", "DeFi", "RWA", "Infrastructure", "Market intel"];
+const NEXT_STEPS = [
+  { title: "Apply", text: "Tell us about yourself and your work." },
+  { title: "We review", text: "We read every application." },
+  { title: "Hear from us", text: "If it is a fit, you receive an approval email." },
+  { title: "Get your card", text: "Add your photo and download your member card." },
+];
 
 type Application = {
   fullName: string; x: string; telegram: string; email: string; country: string;
   role: string; desks: string[]; links: string; context: string; why: string;
 };
-
-const EMPTY: Application = {
-  fullName: "", x: "", telegram: "", email: "", country: "",
-  role: "", desks: [], links: "", context: "", why: "",
+type TextField = Exclude<keyof Application, "role" | "desks">;
+type TextQuestion = {
+  kind: "text" | "email" | "textarea"; field: TextField; id: string; label: string;
+  title: string; description: string; placeholder: string; maxLength: number;
+  autoComplete?: string; optional?: boolean;
 };
+type ChoiceQuestion = { label: string; title: string; description: string };
+type Question = TextQuestion
+  | (ChoiceQuestion & { kind: "role"; field: "role" })
+  | (ChoiceQuestion & { kind: "desks"; field: "desks" });
+const QUESTIONS: Question[] = [
+  { kind: "text", field: "fullName", id: "ap-name", label: "Full name", title: "First, what is your name?", description: "Tell us what you would like us to call you.", placeholder: "Your full name", autoComplete: "name", maxLength: 120 },
+  { kind: "email", field: "email", id: "ap-email", label: "Email", title: "What is your email address?", description: "We will use this to contact you about your application.", placeholder: "you@example.com", autoComplete: "email", maxLength: 254 },
+  { kind: "text", field: "x", id: "ap-x", label: "X handle", title: "Where can we find you on X?", description: "Share your X handle so we can see your work and interests.", placeholder: "@handle", maxLength: 16 },
+  { kind: "text", field: "telegram", id: "ap-telegram", label: "Telegram", title: "What is your Telegram handle?", description: "A way to reach you for research conversations.", placeholder: "@handle", maxLength: 32 },
+  { kind: "text", field: "country", id: "ap-country", label: "Country", title: "Where are you based?", description: "Your country helps us place your market context.", placeholder: "Your country", autoComplete: "country-name", maxLength: 80 },
+  { kind: "role", field: "role", label: "Role", title: "How would you like to contribute?", description: "Choose the role that fits the work you want to do." },
+  { kind: "desks", field: "desks", label: "Research desks", title: "Which research desks interest you?", description: "Choose one or more. You do not have to pick just one." },
+  { kind: "textarea", field: "links", id: "ap-links", label: "Proof of work", title: "Show us something you have worked on.", description: "Research, X threads, dashboards, GitHub, articles or a project. Add one link per line.", placeholder: "Paste links to your work here…", maxLength: 4000 },
+  { kind: "textarea", field: "context", id: "ap-context", label: "Extra context", title: "Anything we should know about that work?", description: "Add context about your role, the question you explored or what you learned. You can skip this.", placeholder: "A little context, if you would like…", maxLength: 2000, optional: true },
+  { kind: "textarea", field: "why", id: "ap-why", label: "Why you", title: "What makes you a fit for IFAGRITHM?", description: "Tell us what you bring and what you want to investigate. A couple of sentences is a good start.", placeholder: "I would like to join the network to…", maxLength: 4000 },
+];
+const EMPTY: Application = { fullName: "", x: "", telegram: "", email: "", country: "", role: "", desks: [], links: "", context: "", why: "" };
 
-function roleLabel(role: string): string {
-  return role === "scout" ? "Research Scout" : role === "analyst" ? "Research Analyst" : "Partnership";
+function roleLabel(role: string) {
+  return ROLES.find(item => item.id === role)?.title ?? "";
 }
 
-function Arrow({ diagonal = false }: { diagonal?: boolean }) {
-  return diagonal ? (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-  ) : (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-  );
+function validate(question: Question, form: Application): string | null {
+  if (question.field === "role") return form.role ? null : "Choose a role to continue.";
+  if (question.field === "desks") return form.desks.length ? null : "Choose at least one research desk.";
+  const value = form[question.field].trim();
+  if ("optional" in question && question.optional) return null;
+  if (!value) return `Please add your ${question.label.toLowerCase()} to continue.`;
+  if (question.field === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email address, such as you@example.com.";
+  if (question.field === "why" && value.length < 40) return "Write at least 40 characters so we can learn a little more about you.";
+  return null;
 }
 
 export default function ApplicationForm() {
   const [form, setForm] = useState<Application>(EMPTY);
-  const [status, setStatus] = useState("");
+  const [started, setStarted] = useState(false);
+  const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState<"forward" | "back">("forward");
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [sending, setSending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [shaking, setShaking] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [copyFallback, setCopyFallback] = useState("");
-  const rootRef = useRef<HTMLDivElement>(null);
-  const railRef = useRef<HTMLElement>(null);
+  const { theme, toggleTheme } = useTheme();
+  const stageRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const editingSnapshot = useRef<Application | null>(null);
+  const review = step === QUESTIONS.length;
+  const question = QUESTIONS[step];
+  const progress = Math.round(step / QUESTIONS.length * 100);
 
-  // the rail fills as you move through the form
   useEffect(() => {
-    const rail = railRef.current;
-    const form = rootRef.current?.querySelector("form");
-    if (!rail || !form) return;
-    let raf = 0;
-    const onScroll = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0;
-        const rect = form.getBoundingClientRect();
-        const progress = Math.min(1, Math.max(0, (window.innerHeight * 0.55 - rect.top) / Math.max(rect.height, 1)));
-        rail.style.transform = `scaleX(${progress})`;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
+    if (!started) return;
+    stageRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
+    const target = panelRef.current?.querySelector<HTMLElement>("[data-answer-focus]") ?? panelRef.current?.querySelector<HTMLElement>("h1");
+    target?.focus({ preventScroll: true });
+  }, [step, started, submitted]);
 
-  const set = <K extends keyof Application>(key: K, value: Application[K]) =>
-    setForm(f => ({ ...f, [key]: value }));
+  const set = <K extends keyof Application>(key: K, value: Application[K]) => {
+    setForm(current => ({ ...current, [key]: value }));
+    setError("");
+    setNotice("");
+  };
 
-  const toggleDesk = (desk: string) =>
-    setForm(f => ({
-      ...f,
-      desks: f.desks.includes(desk) ? f.desks.filter(d => d !== desk) : [...f.desks, desk],
-    }));
-
-  // sections arrive as you reach them
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    const items = Array.from(root.querySelectorAll("[data-reveal]"));
-    if (!items.length) return;
-    const io = new IntersectionObserver(entries => {
-      for (const entry of entries) if (entry.isIntersecting) { entry.target.classList.add("is-in"); io.unobserve(entry.target); }
-    }, { threshold: 0.08 });
-    items.forEach(item => io.observe(item));
-    return () => io.disconnect();
-  }, []);
-
-  function applicationText(): string {
-    return [
-      "IFAGRITHM RESEARCH NETWORK APPLICATION",
-      "",
-      `Name: ${form.fullName.trim()}`,
-      `X: ${form.x.trim()}`,
-      `Telegram: ${form.telegram.trim()}`,
-      `Email: ${form.email.trim()}`,
-      `Country: ${form.country.trim()}`,
-      `Role: ${roleLabel(form.role)}`,
-      `Desks: ${form.desks.join(", ") || "None selected"}`,
-      "",
-      "Proof of work (links):",
-      form.links.trim(),
-      "",
-      form.context.trim() ? `Context:\n${form.context.trim()}` : "",
-      "",
-      "Why IFAGRITHM:",
-      form.why.trim(),
-    ].filter(line => line !== "").join("\n");
+  function moveTo(next: number) {
+    setDirection(next < step ? "back" : "forward");
+    setStep(next);
+    setError("");
+    setNotice("");
+    setCopyFallback("");
   }
 
-  function missing(): string | null {
-    if (!form.fullName.trim() || !form.x.trim() || !form.telegram.trim() || !form.email.trim() || !form.country.trim()) {
-      return "Complete your information in section 01.";
-    }
-    if (!form.role) return "Choose the role that fits you in section 02.";
-    if (form.desks.length === 0) return "Pick at least one desk in section 02.";
-    if (!form.links.trim()) return "Add links to your work in section 03.";
-    if (form.why.trim().length < 40) return "Tell us a little more in section 04 — at least a couple of sentences.";
-    return null;
+  function start() {
+    setStarted(true);
+    stageRef.current?.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+  }
+
+  function advance() {
+    const message = validate(question, form);
+    if (message) { setError(message); return; }
+    moveTo(editing ? QUESTIONS.length : step + 1);
+    setEditing(false);
+    editingSnapshot.current = null;
+  }
+
+  function editAnswer(index: number) {
+    editingSnapshot.current = form;
+    setEditing(true);
+    moveTo(index);
+  }
+
+  function goBack() {
+    if (editing) {
+      if (editingSnapshot.current) setForm(editingSnapshot.current);
+      editingSnapshot.current = null;
+      setEditing(false);
+      moveTo(QUESTIONS.length);
+    } else moveTo(step - 1);
+  }
+
+  function firstMissing() {
+    const missing = QUESTIONS.findIndex(item => validate(item, form));
+    if (missing === -1) return false;
+    moveTo(missing);
+    setError(validate(QUESTIONS[missing], form) ?? "");
+    return true;
+  }
+
+  function applicationText() {
+    return [
+      "IFAGRITHM RESEARCH NETWORK APPLICATION", "",
+      `Name: ${form.fullName.trim()}`, `X: ${form.x.trim()}`, `Telegram: ${form.telegram.trim()}`,
+      `Email: ${form.email.trim()}`, `Country: ${form.country.trim()}`, `Role: ${roleLabel(form.role)}`,
+      `Desks: ${form.desks.join(", ")}`, "", "Proof of work:", form.links.trim(), "",
+      `Context: ${form.context.trim() || "None added"}`, "", "Why IFAGRITHM:", form.why.trim(),
+    ].join("\n");
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const gap = missing();
-    if (gap) {
-      setStatus(gap);
-      setShaking(true);
-      setTimeout(() => setShaking(false), 550);
-      return;
-    }
+    if (sending || submitted) return;
+    if (!review) { advance(); return; }
+    if (firstMissing()) return;
     setSending(true);
+    setError("");
+    setNotice("");
     try {
-      const res = await fetch("/api/apply", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
+      const response = await fetch("/api/apply", {
+        method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          full_name: form.fullName.trim(),
-          x_handle: form.x.trim(),
-          telegram: form.telegram.trim(),
-          email: form.email.trim(),
-          country: form.country.trim(),
-          role: form.role,
-          desks: form.desks,
-          links: form.links.trim(),
-          context: form.context.trim(),
-          why: form.why.trim(),
+          full_name: form.fullName.trim(), x_handle: form.x.trim(), telegram: form.telegram.trim(),
+          email: form.email.trim(), country: form.country.trim(), role: form.role, desks: form.desks,
+          links: form.links.trim(), context: form.context.trim(), why: form.why.trim(),
         }),
       });
-      if (res.status === 201) {
-        setSubmitted(true);
-        setStatus("");
-        return;
-      }
-      const data = await res.json().catch(() => null);
-      setStatus(
-        res.status >= 500
-          ? `We couldn't receive it just now — use Copy application and email it to ${EMAIL}.`
-          : data?.error || "Something went wrong — check your details and try again."
-      );
+      if (response.status === 201) { setSubmitted(true); return; }
+      const data = await response.json().catch(() => null);
+      setError(response.status >= 500
+        ? `We could not receive your application just now. Your answers are still here. Copy them and email ${EMAIL}, or try again.`
+        : typeof data?.error === "string" ? data.error : "Check your details and try again.");
     } catch {
-      setStatus(`Network error — use Copy application and email it to ${EMAIL}.`);
-    } finally {
-      setSending(false);
-    }
+      setError(`The connection failed. Your answers are still here. Try again, or copy them and email ${EMAIL}.`);
+    } finally { setSending(false); }
   }
 
   async function copyApplication() {
-    const gap = missing();
-    if (gap) { setStatus(gap); return; }
+    if (firstMissing()) return;
     const text = applicationText();
     try {
       await navigator.clipboard.writeText(text);
       setCopyFallback("");
-      setStatus("Application copied. Paste it into an email to " + EMAIL + ".");
+      setNotice(`Application copied. Paste it into an email to ${EMAIL}.`);
     } catch {
       setCopyFallback(text);
-      setStatus("Automatic copying is unavailable. Select and copy your application below, then email it to us.");
+      setNotice("Select and copy your application below, then email it to us.");
     }
   }
 
-  return (
-    <div className="apply" ref={rootRef}>
-      <a className="skip-link" href="#apply-main">Skip to content</a>
+  function handleKeys(event: KeyboardEvent<HTMLFormElement>) {
+    if (sending || submitted || event.nativeEvent.isComposing) return;
+    const target = event.target as HTMLElement;
+    const textEntry = target.matches("textarea,input:not([type=radio]):not([type=checkbox])");
+    if (event.key === "Enter" && !target.closest("button,a")) {
+      if (target.tagName === "TEXTAREA" && !event.ctrlKey && !event.metaKey) return;
+      event.preventDefault();
+      event.currentTarget.requestSubmit();
+      return;
+    }
+    if (review || textEntry || event.ctrlKey || event.metaKey || event.altKey) return;
+    const index = event.key.toUpperCase().charCodeAt(0) - 65;
+    if (event.key.length !== 1 || index < 0) return;
+    if (question.kind === "role" && index < ROLES.length) {
+      event.preventDefault(); set("role", ROLES[index].id);
+    } else if (question.kind === "desks" && index < DESKS.length) {
+      event.preventDefault(); toggleDesk(DESKS[index]);
+    }
+  }
 
-      <header className="apply-header">
-        <div className="shell apply-header-inner">
-          <Link className="apply-back" href="/">← ifagrithm.site</Link>
-          <span className="apply-tag">RESEARCH NETWORK · APPLICATION</span>
-        </div>
-      </header>
+  function toggleDesk(desk: string) {
+    set("desks", form.desks.includes(desk) ? form.desks.filter(item => item !== desk) : [...form.desks, desk]);
+  }
 
-      <main id="apply-main">
-        <section className="apply-hero">
-          <div className="shell">
-            <p className="eyebrow" data-reveal>JOIN THE NETWORK</p>
-            <h1 data-reveal>From curiosity to evidence<br /><span>with us.</span></h1>
-            <p className="apply-intro" data-reveal>
-              IFAGRITHM is a Web3 data &amp; research consultancy. We are building a network of
-              Research Scouts and Research Analysts to work on investigations across consumer apps,
-              DeFi, RWA, infrastructure and the wider Web3 market.
-            </p>
-            <p className="apply-minutes" data-reveal>Takes about 5–10 minutes.</p>
+  function answerText(item: Question) {
+    if (item.field === "role") return roleLabel(form.role);
+    if (item.field === "desks") return form.desks.join(", ");
+    return form[item.field].trim() || "Not added";
+  }
+
+  return <div className={`apply${started ? " has-started" : ""}`}>
+    <a className="skip-link" href="#apply-main">Skip to content</a>
+    <header className="apply-header"><div className="shell apply-header-inner">
+      <Link className="apply-back" href="/" aria-label="Back to IFAGRITHM"><BrandMark priority/><span>IFAGRITHM</span></Link>
+      <div className="apply-header-actions"><span className="apply-tag">RESEARCH NETWORK</span><button className="theme-button" type="button" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.5"/><path d="M12 5a7 7 0 0 1 0 14Z" fill="currentColor"/></svg></button></div>
+    </div></header>
+
+    <main id="apply-main">
+      <section className="apply-next shell" aria-labelledby="apply-next-title">
+        <div className="apply-next-heading"><h2 id="apply-next-title">What happens next</h2><span>From application to member card</span></div>
+        <ol className="apply-steps">{NEXT_STEPS.map((item, index) => <li key={item.title}><span className="apply-step-number">0{index + 1}</span><div><h3>{item.title}</h3><p>{item.text}</p></div></li>)}</ol>
+      </section>
+
+      <section className="apply-stage shell" ref={stageRef} aria-label="Network application">
+        {!started ? <div className="apply-welcome">
+          <div className="apply-welcome-copy"><p className="eyebrow">JOIN THE NETWORK</p><h1>From curiosity<br/>to evidence.<br/><span>With us.</span></h1><p className="apply-intro">Join the people turning Web3 behaviour into research. Tell us about yourself, your work, and the questions you want to investigate.</p><div className="apply-start-actions"><button type="button" className="button demo-cta" onClick={start}>Start application <Arrow/></button><span>5 to 10 minutes · 10 questions</span></div><p className="apply-welcome-note">Research Scouts, Analysts and Partners.</p></div>
+          <div className="apply-welcome-art" aria-hidden="true"><div className="apply-art-orbit"/><BrandMark/><span>FROM BEHAVIOUR<br/>TO DECISIONS</span></div>
+        </div> : submitted ? <div className="apply-success" ref={panelRef}>
+          <span className="apply-success-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="m8 16 5 5 11-11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></span><p className="eyebrow">THANK YOU FOR APPLYING</p><h1 tabIndex={-1}>Application received.</h1><p>Your application is saved for review. Approved applicants receive an email with a link to their member card.</p><Link className="button demo-cta" href="/">Back to the site <Arrow/></Link>
+        </div> : <form className="apply-form" onSubmit={submit} onKeyDown={handleKeys} noValidate aria-labelledby="apply-question-title">
+          <div className="apply-progress-heading"><span>{review ? "READY FOR REVIEW" : "YOUR APPLICATION"}</span><span>{review ? "All questions complete" : `Question ${step + 1} of ${QUESTIONS.length}`}</span></div>
+          <div className="apply-progress" role="progressbar" aria-label="Application progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }}/></div>
+          <div key={step} className={`apply-panel question-${direction}`} ref={panelRef}>
+            {review ? <>
+              <p className="eyebrow">ONE LAST LOOK</p><h1 className="apply-question-title" id="apply-question-title" tabIndex={-1}>Ready to send, {form.fullName.trim().split(/\s+/)[0]}?</h1><p className="apply-question-description">Review your answers. You can edit any of them before sending.</p>
+              <dl className="apply-review">{QUESTIONS.map((item, index) => <div key={item.field}><div className="apply-review-answer"><dt>{item.label}</dt><dd>{answerText(item)}</dd></div><button className="apply-edit" type="button" aria-label={`Edit ${item.label.toLowerCase()}`} onClick={() => editAnswer(index)}>Edit <Arrow/></button></div>)}</dl>
+            </> : <>
+              <div className="apply-question-heading"><span className="apply-question-number" aria-hidden="true">{String(step + 1).padStart(2, "0")} <Arrow/></span><h1 className="apply-question-title" id="apply-question-title" tabIndex={-1}>{question.title}</h1></div>
+              <p className="apply-question-description" id="apply-question-description">{question.description}</p>
+              {(question.kind === "role" || question.kind === "desks") ? <fieldset className={`apply-choices ${question.kind === "desks" ? "apply-desk-choices" : ""}`} aria-describedby={`apply-question-description${error ? " apply-error" : ""}`}><legend className="apply-sr-only">{question.label}</legend>
+                {question.kind === "role" ? ROLES.map((role, index) => <label className={`apply-choice${form.role === role.id ? " is-selected" : ""}`} key={role.id}><input type="radio" name="role" value={role.id} checked={form.role === role.id} onChange={() => set("role", role.id)} required/><span className="apply-choice-key" aria-hidden="true">{String.fromCharCode(65 + index)}</span><span className="apply-choice-text"><strong>{role.title}</strong><span>{role.line}</span></span><span className="apply-choice-check" aria-hidden="true">{form.role === role.id ? "✓" : ""}</span></label>) : DESKS.map((desk, index) => <label className={`apply-choice${form.desks.includes(desk) ? " is-selected" : ""}`} key={desk}><input type="checkbox" name="desks" value={desk} checked={form.desks.includes(desk)} onChange={() => toggleDesk(desk)}/><span className="apply-choice-key" aria-hidden="true">{String.fromCharCode(65 + index)}</span><span className="apply-choice-text"><strong>{desk}</strong></span><span className="apply-choice-check" aria-hidden="true">{form.desks.includes(desk) ? "✓" : ""}</span></label>)}
+              </fieldset> : <div className="apply-answer">
+                <label className="apply-sr-only" htmlFor={question.id}>{question.label}</label>
+                {question.kind === "textarea" ? <textarea id={question.id} name={question.field} data-answer-focus rows={4} required={!question.optional} maxLength={question.maxLength} value={form[question.field]} placeholder={question.placeholder} onChange={event => set(question.field, event.target.value)} aria-invalid={Boolean(error)} aria-describedby={`apply-question-description apply-answer-hint${error ? " apply-error" : ""}`}/> : <input id={question.id} name={question.field} data-answer-focus type={question.kind === "email" ? "email" : "text"} inputMode={question.kind === "email" ? "email" : "text"} autoComplete={question.autoComplete ?? "off"} autoCapitalize={question.kind === "email" || question.field === "x" || question.field === "telegram" ? "none" : "words"} spellCheck={question.field === "fullName" || question.field === "country"} required maxLength={question.maxLength} value={form[question.field]} placeholder={question.placeholder} onChange={event => set(question.field, event.target.value)} aria-invalid={Boolean(error)} aria-describedby={`apply-question-description${error ? " apply-error" : ""}`}/>}
+                {question.kind === "textarea" ? <p className="apply-answer-hint" id="apply-answer-hint">{question.field === "why" ? `${form.why.trim().length} characters · minimum 40` : question.optional ? "Optional. Skip if you have nothing to add." : "One link per line."}</p> : null}
+              </div>}
+            </>}
+            <p id="apply-error" className="apply-error" role="alert">{error}</p>
+            <div className="apply-actions"><button className="button demo-cta" type="submit" disabled={sending}>{sending ? "Sending…" : review ? "Submit application" : editing ? "Save answer" : "optional" in question && question.optional && !form.context.trim() ? "Skip" : step === QUESTIONS.length - 1 ? "Review application" : "Continue"} <Arrow/></button><span className="apply-keyboard-hint">{review ? "" : question.kind === "textarea" ? <>press <kbd>Ctrl / ⌘ + Enter</kbd></> : <>press <kbd>Enter ↵</kbd></>}</span>{step > 0 || editing ? <button className="apply-previous" type="button" onClick={goBack} disabled={sending}><Arrow/> {editing ? "Back to review" : "Back"}</button> : null}</div>
+            {review ? <div className="apply-review-footer"><p>Your application goes to our research network review inbox.</p><button className="apply-copy" type="button" onClick={copyApplication} disabled={sending}>Copy application <Arrow/></button><p className="apply-notice" role="status">{notice}</p>{copyFallback ? <label className="apply-fallback" htmlFor="ap-fallback">Your application to copy<textarea id="ap-fallback" readOnly value={copyFallback} rows={10} onFocus={event => event.currentTarget.select()}/></label> : null}</div> : null}
           </div>
-        </section>
+        </form>}
+      </section>
+    </main>
 
-        <div className="shell apply-grid">
-          {submitted ? (
-            <div className="apply-success" role="status">
-              <svg className="apply-check" viewBox="0 0 72 72" aria-hidden="true">
-                <circle cx="36" cy="36" r="33" />
-                <path d="M22 37.5 32 47.5 50 27" />
-              </svg>
-              <h2>Application received.</h2>
-              <p>Your application is saved for review. Approved applicants receive a link to their member card.</p>
-              <Link className="button button-primary" href="/">Back to the site <Arrow diagonal /></Link>
-
-            </div>
-          ) : (
-            <form className="apply-form" onSubmit={submit} >
-              <div className="apply-rail" aria-hidden="true"><i ref={railRef} /></div>
-            {/* 01 — identity */}
-            <fieldset className="apply-block" data-reveal>
-              <legend><i>01</i> Your information</legend>
-              <div className="apply-row">
-                <label htmlFor="ap-name"><span>Full name <span aria-hidden="true">*</span></span>
-                  <input id="ap-name" required autoComplete="name" maxLength={120} value={form.fullName} onChange={e => set("fullName", e.target.value)} />
-                </label>
-                <label htmlFor="ap-x"><span>X handle <span aria-hidden="true">*</span></span>
-                  <input id="ap-x" required placeholder="@handle" maxLength={16} value={form.x} onChange={e => set("x", e.target.value)} />
-                </label>
-              </div>
-              <div className="apply-row">
-                <label htmlFor="ap-telegram"><span>Telegram <span aria-hidden="true">*</span></span>
-                  <input id="ap-telegram" required placeholder="@handle" maxLength={32} value={form.telegram} onChange={e => set("telegram", e.target.value)} />
-                </label>
-                <label htmlFor="ap-email"><span>Email <span aria-hidden="true">*</span></span>
-                  <input id="ap-email" required type="email" autoComplete="email" maxLength={254} value={form.email} onChange={e => set("email", e.target.value)} />
-                </label>
-              </div>
-              <label htmlFor="ap-country"><span>Country <span aria-hidden="true">*</span></span>
-                <input id="ap-country" required autoComplete="country-name" maxLength={80} value={form.country} onChange={e => set("country", e.target.value)} />
-              </label>
-            </fieldset>
-
-            {/* 02 — role */}
-            <fieldset className="apply-block" data-reveal>
-              <legend><i>02</i> Your role</legend>
-              <div className="apply-roles" role="group" aria-label="Role">
-                {ROLES.map(role => (
-                  <button
-                    key={role.id}
-                    type="button"
-                    aria-pressed={form.role === role.id}
-                    className={`apply-role${form.role === role.id ? " is-on" : ""}`}
-                    onClick={() => set("role", role.id)}
-                  >
-                    <span className="apply-role-title">{role.title}</span>
-                    <span className="apply-role-line">{role.line}</span>
-                  </button>
-                ))}
-              </div>
-              <p className="apply-label">Which desks fit you? <span aria-hidden="true">*</span></p>
-              <div className="apply-desks" role="group" aria-label="Desks">
-                {DESKS.map(desk => (
-                  <button key={desk} type="button" aria-pressed={form.desks.includes(desk)} className={`apply-chip${form.desks.includes(desk) ? " is-on" : ""}`} onClick={() => toggleDesk(desk)}>
-                    {desk}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            {/* 03 — proof */}
-            <fieldset className="apply-block" data-reveal>
-              <legend><i>03</i> Proof of work</legend>
-              <label htmlFor="ap-links"><span>Links to things you have researched, built or published <span aria-hidden="true">*</span></span>
-                <textarea id="ap-links" required rows={3} maxLength={4000} placeholder="X threads, Dune dashboards, GitHub, Notion, articles — one per line" value={form.links} onChange={e => set("links", e.target.value)} />
-              </label>
-              <label htmlFor="ap-context"><span>Anything we should know about them <span className="apply-optional">(optional)</span></span>
-                <textarea id="ap-context" rows={3} maxLength={2000} value={form.context} onChange={e => set("context", e.target.value)} />
-              </label>
-            </fieldset>
-
-            {/* 04 — motivation */}
-            <fieldset className="apply-block" data-reveal>
-              <legend><i>04</i> Why you</legend>
-              <label htmlFor="ap-why"><span>What makes you a fit for the network? <span aria-hidden="true">*</span></span>
-                <textarea id="ap-why" required rows={5} maxLength={4000} value={form.why} onChange={e => set("why", e.target.value)} />
-              </label>
-            </fieldset>
-
-            <div className="apply-actions" data-reveal>
-              <button className="button button-primary" type="submit" disabled={sending}>{sending ? "Sending…" : "Submit application"} <Arrow diagonal /></button>
-              <button className="apply-copy" type="button" onClick={copyApplication}>Copy application <Arrow /></button>
-            </div>
-            <p className="apply-helper" data-reveal>Your details are saved for review. We will contact you with a decision.</p>
-            <p className={`apply-status${shaking ? " apply-shake" : ""}`} role="status" data-reveal>{status}</p>
-            {copyFallback && (
-              <label className="apply-fallback" htmlFor="ap-fallback">Your application to copy
-                <textarea id="ap-fallback" readOnly value={copyFallback} rows={10} onFocus={e => e.currentTarget.select()} />
-              </label>
-            )}
-            </form>
-          )}
-
-          <aside className="apply-side" data-reveal aria-label="What happens next">
-            <p className="apply-side-eyebrow">WHAT HAPPENS NEXT</p>
-            <ol className="apply-steps">
-              <li><span>01</span><div><h3>Apply</h3><p>Fill the form and send it in.</p></div></li>
-              <li><span>02</span><div><h3>We review</h3><p>We read every application.</p></div></li>
-              <li><span>03</span><div><h3>You get a mail</h3><p>If it is a fit, we send you an approval mail.</p></div></li>
-              <li><span>04</span><div><h3>Your card</h3><p>Open the link, add your photo, download your card.</p></div></li>
-            </ol>
-          </aside>
-        </div>
-
-        <footer className="apply-footer">
-          <div className="shell apply-footer-inner">
-            <small>© {new Date().getFullYear()} IFAGRITHM — Web3 Research &amp; Intelligence</small>
-            <Link href="/">Main site <Arrow diagonal /></Link>
-          </div>
-        </footer>
-      </main>
-    </div>
-  );
+    <footer className="apply-footer"><div className="shell apply-footer-inner"><small>© {new Date().getFullYear()} IFAGRITHM</small><Link href="/">Back to the site <Arrow/></Link></div></footer>
+  </div>;
 }
