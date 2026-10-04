@@ -244,7 +244,7 @@ export default function ApplicationForm() {
           <div key={step} className={`apply-panel question-${direction}`} ref={panelRef}>
             {review ? <>
               <p className="eyebrow">ONE LAST LOOK</p><h1 className="apply-question-title" id="apply-question-title" tabIndex={-1}>Ready to send, {form.fullName.trim().split(/\s+/)[0]}?</h1><p className="apply-question-description">Review your answers. You can edit any of them before sending.</p>
-              <dl className="apply-review">{QUESTIONS.map((item, index) => <div key={item.field}><div className="apply-review-answer"><dt>{item.label}</dt><dd>{answerText(item)}</dd></div><button className="apply-edit" type="button" aria-label={`Edit ${item.label.toLowerCase()}`} onClick={() => editAnswer(index)}>Edit <Arrow/></button></div>)}</dl>
+              <dl className="apply-review">{QUESTIONS.map((item, index) => <div key={item.field}><div className="apply-review-answer"><dt>{item.label}</dt><dd>{answerText(item)}</dd></div><button className="apply-edit" type="button" disabled={sending} aria-label={`Edit ${item.label.toLowerCase()}`} onClick={() => editAnswer(index)}>Edit <Arrow/></button></div>)}</dl>
             </> : <>
               <div className="apply-question-heading"><span className="apply-question-number" aria-hidden="true">{String(step + 1).padStart(2, "0")} <Arrow/></span><h1 className="apply-question-title" id="apply-question-title" tabIndex={-1}>{question.title}</h1></div>
               <p className="apply-question-description" id="apply-question-description">{question.description}</p>
