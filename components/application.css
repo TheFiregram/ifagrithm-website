@@ -18,6 +18,8 @@
 .apply-steps p{font-size:12px;line-height:1.65;color:var(--muted);margin-top:4px;max-width:210px}
 .apply-stage{scroll-margin-top:100px;padding:70px 0 100px;min-height:calc(100svh - 300px)}
 .apply.has-started .apply-stage{min-height:calc(100svh - 160px)}
+.apply-stage[data-keyboard-open]{padding-bottom:calc(var(--keyboard-inset,0px) + 100px)}
+.apply-stage[data-keyboard-open] .apply-answer textarea{min-height:80px;height:clamp(80px,calc(var(--answer-viewport-height) * .32),155px);max-height:clamp(80px,calc(var(--answer-viewport-height) * .32),155px)}
 .apply-welcome{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,.55fr);gap:70px;align-items:center;max-width:1120px;margin:auto;animation:apply-arrive .65s var(--entry) both}
 .apply-welcome-copy{min-width:0}
 .apply-welcome h1{font-size:clamp(46px,5.5vw,76px);font-weight:400;line-height:1.04;letter-spacing:-.05em;margin-top:24px}

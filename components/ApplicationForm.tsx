@@ -83,6 +83,65 @@ export default function ApplicationForm() {
   const progress = Math.round(step / QUESTIONS.length * 100);
 
   useEffect(() => {
+    const viewport = window.visualViewport;
+    const stage = stageRef.current;
+    if (!stage) return;
+    let frame = 0;
+    let settle = 0;
+
+    function keepAnswerVisible() {
+      frame = 0;
+      if (!stage) return;
+      const active = document.activeElement;
+      const typing = active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement;
+      const height = viewport?.height ?? window.innerHeight;
+      const top = viewport?.offsetTop ?? 0;
+      const inset = Math.max(0, window.innerHeight - height - top);
+      const keyboard = typing && stage.contains(active) && inset > 120 && (viewport?.scale ?? 1) === 1;
+      stage.style.setProperty("--keyboard-inset", keyboard ? `${inset}px` : "0px");
+      stage.style.setProperty("--answer-viewport-height", `${height}px`);
+      stage.toggleAttribute("data-keyboard-open", keyboard);
+      if (!typing || !stage.contains(active)) return;
+
+      const bounds = active.getBoundingClientRect();
+      const headerBottom = document.querySelector(".apply-header")?.getBoundingClientRect().bottom ?? 0;
+      const visibleTop = Math.max(top + 16, headerBottom + 16);
+      const visibleBottom = top + height - 24;
+      const delta = bounds.bottom > visibleBottom
+        ? Math.min(bounds.bottom - visibleBottom, bounds.top - visibleTop)
+        : bounds.top < visibleTop ? bounds.top - visibleTop : 0;
+      if (Math.abs(delta) > 2) window.scrollBy({ top: delta, behavior: "instant" });
+    }
+
+    function schedule() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(keepAnswerVisible);
+    }
+    function onFocus() {
+      schedule();
+      window.clearTimeout(settle);
+      settle = window.setTimeout(schedule, 400);
+    }
+    document.addEventListener("focusin", onFocus);
+    document.addEventListener("focusout", schedule);
+    viewport?.addEventListener("resize", schedule);
+    viewport?.addEventListener("scroll", schedule);
+    window.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(settle);
+      document.removeEventListener("focusin", onFocus);
+      document.removeEventListener("focusout", schedule);
+      viewport?.removeEventListener("resize", schedule);
+      viewport?.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      stage.style.removeProperty("--keyboard-inset");
+      stage.style.removeProperty("--answer-viewport-height");
+      stage.removeAttribute("data-keyboard-open");
+    };
+  }, []);
+
+  useEffect(() => {
     if (!started) return;
     stageRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
     const target = panelRef.current?.querySelector<HTMLElement>("[data-answer-focus]") ?? panelRef.current?.querySelector<HTMLElement>("h1");
