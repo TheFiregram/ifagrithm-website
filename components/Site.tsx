@@ -202,7 +202,13 @@ export default function Site() {
 
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
+    const html = document.documentElement;
+    // cross-fade: blanket transitions for 650ms, then release them
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      html.classList.add("theme-fade");
+      setTimeout(() => html.classList.remove("theme-fade"), 650);
+    }
+    html.dataset.theme = next;
     try { localStorage.setItem("ifg-theme", next); } catch { /* private mode */ }
     setTheme(next);
   }

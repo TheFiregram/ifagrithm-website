@@ -284,8 +284,8 @@ h2 { font-size: clamp(34px, 4.1vw, 60px); letter-spacing: -.03em; line-height: 1
   .header-inner { min-height: 68px; gap: 14px; }
   .nav-actions { margin-left: auto; }
   .menu-button { display: grid; }
-  .nav-links { display: none; position: absolute; top: 67px; left: 0; right: 0; background: var(--bg); padding: 20px; border-bottom: 1px solid var(--line); gap: 0; }
-  .nav-links.is-open { display: flex; flex-direction: column; align-items: stretch; }
+  .nav-links { position: absolute; top: 67px; left: 0; right: 0; background: var(--bg); padding: 20px; border-bottom: 1px solid var(--line); gap: 0; flex-direction: column; align-items: stretch; opacity: 0; transform: translateY(-10px); visibility: hidden; pointer-events: none; transition: opacity .32s var(--ease), transform .32s var(--ease), visibility .32s; }
+  .nav-links.is-open { opacity: 1; transform: none; visibility: visible; pointer-events: auto; }
   .nav-links > a { padding: 12px; }
   .nav-links .nav-cta { justify-content: space-between; margin-top: 10px; }
   .hero { display: block; padding-block: 0 84px; }
@@ -611,4 +611,38 @@ body { position: relative; isolation: isolate; }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-reveal].arrive { opacity: 1; transform: none; animation: none; }
+}
+
+/* ============================================================
+   Transitions pass — theme cross-fade, nav underlines, success rise
+   ============================================================ */
+
+/* theme cross-fade: applied only during the 650ms after a toggle */
+html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
+  transition: background-color .55s ease, background .55s ease, color .55s ease,
+    border-color .55s ease, fill .55s ease, stroke .55s ease, box-shadow .55s ease, opacity .55s ease !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after { transition: none !important; }
+}
+
+/* nav links: sliding underline */
+.nav-links > a:not(.nav-cta) {
+  background: linear-gradient(currentColor, currentColor) left bottom / 0% 1px no-repeat;
+  transition: color .2s ease, background-size .35s var(--ease);
+  padding-bottom: 3px;
+}
+.nav-links > a:not(.nav-cta):hover { background-size: 100% 1px; }
+@media (max-width: 860px) {
+  .nav-links > a:not(.nav-cta) { background: none; }
+}
+
+/* submitted screen rises in */
+.apply-success { animation: success-in .6s var(--ease) both; }
+@keyframes success-in {
+  from { opacity: 0; transform: translateY(18px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .apply-success { animation: none; }
 }
