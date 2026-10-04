@@ -1,510 +1,133 @@
 "use client";
 
-import Image from "next/image";
-import { type FormEvent, useEffect, useRef, useState } from "react";
-import HeroScene from "./HeroScene";
-import Preloader from "./Preloader";
+import { type CSSProperties, type FormEvent, useEffect, useRef, useState } from "react";
+import IntroScreen, { type IntroStage } from "./IntroScreen";
+import HeroSignals from "./HeroSignals";
+import RotatingHeadline from "./RotatingHeadline";
+import FeatureSection from "./FeatureSection";
+import { Arrow, BrandMark } from "./Brand";
+import { BriefWall } from "./ResearchVisuals";
+import GlyphFooter from "./GlyphFooter";
 
-const X_URL = "https://x.com/ifagrithm?s=11";
-const LINKEDIN_URL = "https://www.linkedin.com/company/ifagrithm/";
-const EMAIL = "Ifagrithm@gmail.com";
-
-const heroChips = ["User research", "Market intelligence", "Growth research"];
-
-const services = [
-  {
-    title: "User & Behaviour Research",
-    description: "Understand how people use your product, what different user groups do, and how activity changes over time. We map the segments that exist today and show how behaviour shifts as the product and its market move.",
-    outputs: ["Behaviour segments", "User journey analysis", "Retention and activity research"],
-    motif: "segments",
-  },
-  {
-    title: "Market & Competitor Intelligence",
-    description: "Investigate competing products, market activity and the alternatives your users already choose. Know where you actually stand: who else is competing for the same behaviour, and on what terms.",
-    outputs: ["Competitor studies", "Market briefs", "Product comparisons"],
-    motif: "candles",
-  },
-  {
-    title: "Growth & Distribution Research",
-    description: "Investigate where relevant audiences already are and assess channels, communities and partnerships worth testing. Growth research here means evidence about the real places people gather, not a checklist of channels.",
-    outputs: ["Audience research", "Distribution maps", "Partnership assessments"],
-    motif: "network",
-  },
-  {
-    title: "Decision Research & Measurement",
-    description: "Combine evidence around a business question, then measure what happens when a team acts on it. The work circles back to a decision: assemble the evidence, act on it, and check what actually happened.",
-    outputs: ["Decision briefs", "Intervention analysis", "Custom analytical studies"],
-    motif: "fork",
-  },
+const EMAIL="Ifagrithm@gmail.com";
+const X_URL="https://x.com/ifagrithm?s=11";
+const LINKEDIN_URL="https://www.linkedin.com/company/ifagrithm/";
+const links=[{label:"Services",href:"#services"},{label:"Approach",href:"#approach"},{label:"Focus",href:"#focus"},{label:"FAQ",href:"#faq"},{label:"Join the network",href:"/application"}];
+const stages=[
+  {title:"Define the decision",label:"DEFINE",text:"Agree on the question, the scope, and what the research needs to inform.",nodes:["Q","S","G"]},
+  {title:"Investigate the evidence",label:"INVESTIGATE",text:"Use onchain activity, market information, and qualitative research as the question requires.",nodes:["U","M","P","C","A","D"]},
+  {title:"Deliver the findings",label:"DELIVER",text:"Explain the patterns, limitations, and practical options in a clear research brief.",nodes:["B","M","D","S","C","A","R","L","N"]},
+];
+const questions=[
+  {question:"What does Ifagrithm research?",answer:"We study user behaviour, markets, competitors, growth channels, and the evidence behind product and business decisions. Each study starts with the question your team needs to answer."},
+  {question:"Who is this for?",answer:"Web3 teams making product, positioning, growth, and community decisions. Tell us about your product and the decision you are working through so we can agree on a useful scope."},
+  {question:"What will we receive?",answer:"The output depends on the question. It may be a research brief, behaviour segments, a competitor study, a distribution map, or a decision brief. We agree on the deliverable before the research begins."},
+  {question:"How does the research work?",answer:"We define the decision, investigate the relevant evidence, and deliver the findings with their limitations. The work can draw on onchain activity, market information, and qualitative research."},
+  {question:"How do we start a project?",answer:"Send your product, your question, and the decision you need to make through the enquiry form below. You can contact us directly at Ifagrithm@gmail.com.",contact:true},
 ];
 
-const tickerItems = services.flatMap(service => service.outputs);
-
-const evidence = [
-  {
-    title: "On-chain activity",
-    text: "What wallets actually do: where activity concentrates, how it moves between products, and how it changes over time. Raw activity becomes a picture of behaviour once it is grouped, compared and watched across weeks rather than moments.",
-    viz: "bars",
-  },
-  {
-    title: "Market information",
-    text: "How competing products are positioned, where activity in the market happens, and what alternatives people already choose. It is the context that turns an isolated pattern into a finding you can act on with confidence.",
-    viz: "line",
-  },
-  {
-    title: "Qualitative research",
-    text: "The reasons behind the patterns: what users say they do, what they actually mean, and where the two come apart. Numbers describe behaviour; conversations and communities explain it, and the gap between the two is usually where the insight lives.",
-    viz: "dots",
-  },
-];
-
-const approach = [
-  ["Define the decision", "Agree on the question, the scope and what the research needs to inform. A narrow question with a clear owner beats a broad study nobody acts on."],
-  ["Investigate the evidence", "Use on-chain activity, market information and qualitative research as the question requires. The mix is chosen for the decision, not for the sake of covering every source."],
-  ["Deliver the findings", "Explain the patterns, limitations and practical options in a clear research brief. Written to be read, argued with and acted on, not filed away."],
-];
-
-const sectors = ["DeFi protocols", "Exchanges & wallets", "Infrastructure", "Consumer Web3", "Market makers"];
-
-// Drafted strictly from claims already published on this site — pending approval before release.
-const faq = [
-  {
-    q: "What does IFAGRITHM do?",
-    a: "IFAGRITHM is a Web3 research and intelligence practice. We help Web3 teams understand what their users do, assess markets and competitors, and investigate where growth can come from — so product and growth decisions rest on evidence rather than assumption.",
-  },
-  {
-    q: "Who do you work with?",
-    a: "Web3 teams making product and growth decisions. Most briefs touch user behaviour, market position or distribution — from understanding early users to investigating new audiences, communities and partnerships.",
-  },
-  {
-    q: "How does a project work?",
-    a: "We agree on the decision the research needs to inform, investigate the evidence — on-chain activity, market information and qualitative research as the question requires — then deliver the findings in a clear research brief you can interrogate and use.",
-  },
-  {
-    q: "What do we get at the end?",
-    a: "A research brief built around your question: findings explained plainly, limitations stated and practical options for what to do next. Depending on the brief, that can be behaviour segments, competitor studies, distribution maps or a custom analytical study.",
-  },
-  {
-    q: "What if our question is not fully formed yet?",
-    a: "That is what the first step is for. Defining the decision — the question, the scope and what the research needs to inform — is part of the work, and a narrower question with a clear owner beats a broad study nobody acts on.",
-  },
-  {
-    q: "How do we start?",
-    a: "Tell us about your product and the decision you are working through. Use the project brief form below or email us directly.",
-  },
-];
-
-function Arrow({ diagonal = false }: { diagonal?: boolean }) {
-  return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={diagonal ? "M6 18 18 6M6 6h12v12" : "M4 12h16m-6-6 6 6-6 6"} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+function Brand({ footer=false }: {footer?:boolean}) {
+  return <a className={`brand${footer?" footer-brand":" corner-brand"}`} href="#top" aria-label="IFAGRITHM home"><span className="brand-turn"><BrandMark priority={!footer}/></span><span className="brand-name">IFAGRITHM</span></a>;
 }
 
-function Brand() {
-  return <a className="brand" href="#top" aria-label="IFAGRITHM home"><span className="logo-wrap"><Image src="/ifagrithm-logo.png" alt="" width={36} height={36} priority /></span><span>IFAGRITHM</span></a>;
+function Odometer({ value, delay=0 }: {value:string;delay?:number}) {
+  return <span className="odometer" aria-label={String(Number(value))} style={{"--count-delay":`${delay}s`} as CSSProperties}>{[...value].map((digit,index)=><span className="digit-window" key={index} aria-hidden="true"><span className="digit-track" style={{"--end":20+Number(digit),"--digit-delay":`${index*.12}s`} as CSSProperties}>{Array.from({length:30},(_,number)=><span key={number}>{number%10}</span>)}</span></span>)}</span>;
 }
 
-function Words({ text, base = 0 }: { text: string; base?: number }) {
-  return <>{text.split(" ").map((word, index) => <span className="w" key={`${word}-${index}`} style={{ animationDelay: `${base + index * 0.07}s` }}>{word}</span>)}</>;
-}
-
-// scroll-reveal headline words (data-reveal="words" staggers them in)
-function RW({ text, start = 0 }: { text: string; start?: number }) {
-  return <>{text.split(" ").map((word, index) => <span className="rw" key={`${word}-${index}`} style={{ "--i": start + index } as React.CSSProperties}>{word}</span>)}{" "}</>;
-}
-
-function ResearchMap() {
-  return <figure className="research-map" data-reveal aria-labelledby="map-caption">
-    <figcaption id="map-caption"><span className="map-title">Illustrative research map</span><span className="map-label">CONCEPTUAL ILLUSTRATION</span></figcaption>
-    <div className="map-canvas">
-      <svg className="map-connections" viewBox="0 0 480 390" preserveAspectRatio="none" fill="none" aria-hidden="true">
-        <path pathLength={100} d="M240 100v30H110v28M211 200h58M368 254v36H240v18" stroke="currentColor" strokeWidth="1.4" />
-        <path pathLength={100} d="m106 150 4 8 4-8M261 196l8 4-8 4M236 300l4 8 4-8" stroke="currentColor" strokeWidth="1.4" />
-        <circle className="flow-spark" r="3"><animateMotion dur="5.2s" repeatCount="indefinite" path="M240 100v30H110v28" /></circle>
-        <circle className="flow-spark" r="2.6"><animateMotion dur="2.2s" repeatCount="indefinite" path="M211 200h58" /></circle>
-        <circle className="flow-spark" r="3"><animateMotion dur="5.2s" begin="-2.6s" repeatCount="indefinite" path="M368 254v36H240v18" /></circle>
-      </svg>
-      <div className="map-node node-activity"><span className="node-index">01 / OBSERVE</span><strong>Product activity</strong><span className="node-detail">How people use a product</span></div>
-      <span className="mobile-connector" aria-hidden="true">↓</span>
-      <div className="map-node node-segments"><span className="node-index">02 / UNDERSTAND</span><strong>User segments</strong></div>
-      <span className="mobile-connector" aria-hidden="true">↓</span>
-      <div className="map-node node-related"><span className="node-index">03 / INVESTIGATE</span><strong>Related products<br />and channels</strong></div>
-      <span className="mobile-connector" aria-hidden="true">↓</span>
-      <div className="map-node node-hypotheses"><span className="node-index">04 / EXPLORE</span><strong>Acquisition hypotheses</strong><span className="node-detail">Routes worth testing</span></div>
-    </div>
-  </figure>;
-}
-
-function EvidenceViz({ kind }: { kind: string }) {
-  if (kind === "bars") return <div className="viz" aria-hidden="true"><div className="viz-bars">{Array.from({ length: 14 }).map((_, index) => <i key={index} style={{ height: `${28 + Math.abs(Math.sin(index * 1.7)) * 62}%`, animationDelay: `${index * 0.14}s` }} />)}</div></div>;
-  if (kind === "line") return <div className="viz" aria-hidden="true"><svg className="viz-line" viewBox="0 0 200 56" preserveAspectRatio="none" fill="none"><path className="viz-flow" d="M0 44 C 24 40, 34 22, 52 26 S 84 48, 102 38 S 128 8, 148 14 S 182 30, 200 12" pathLength="100" stroke="var(--accent)" strokeWidth="1.6" /><path d="M0 44 C 24 40, 34 22, 52 26 S 84 48, 102 38 S 128 8, 148 14 S 182 30, 200 12 V 56 H 0 Z" fill="var(--accent)" opacity=".07" /></svg></div>;
-  return <div className="viz" aria-hidden="true"><div className="viz-dots">{Array.from({ length: 16 }).map((_, index) => <i key={index} style={{ left: `${6 + (index % 8) * 12.5}%`, top: `${18 + Math.abs(Math.cos(index * 2.1)) * 58}%`, width: `${7 + (index % 4) * 3}px`, height: `${7 + (index % 4) * 3}px`, opacity: 0.35 + (index % 5) * 0.13, animationDelay: `${index * 0.3}s` }} />)}</div></div>;
-}
-
-// One unique motif per service row. No repeats anywhere else on the page.
-function RowViz({ kind }: { kind: string }) {
-  if (kind === "segments") return <div className="rowviz" aria-hidden="true">
-    <svg className="rv-donut" viewBox="0 0 120 120" fill="none">
-      <circle cx="60" cy="60" r="42" stroke="var(--line)" strokeWidth="12" />
-      <circle className="rv-seg" cx="60" cy="60" r="42" stroke="var(--accent)" strokeWidth="12" strokeDasharray="58 206" strokeDashoffset="0" transform="rotate(-90 60 60)" />
-      <circle className="rv-seg rv-seg-2" cx="60" cy="60" r="42" stroke="var(--accent)" strokeWidth="12" strokeDasharray="34 230" strokeDashoffset="-70" transform="rotate(-90 60 60)" opacity=".55" />
-      <circle className="rv-seg rv-seg-3" cx="60" cy="60" r="42" stroke="var(--accent)" strokeWidth="12" strokeDasharray="22 242" strokeDashoffset="-116" transform="rotate(-90 60 60)" opacity=".3" />
-      <circle cx="60" cy="60" r="5" fill="var(--accent)" />
-    </svg>
-  </div>;
-  if (kind === "candles") return <div className="rowviz" aria-hidden="true">
-    <svg className="rv-candles" viewBox="0 0 200 84" preserveAspectRatio="none" fill="none">
-      {Array.from({ length: 9 }).map((_, index) => {
-        const up = index % 2 === 0;
-        const bodyH = 12 + Math.abs(Math.sin(index * 1.3)) * 22;
-        const y = up ? 46 - bodyH : 38;
-        return <g key={index} opacity={0.45 + (index / 9) * 0.55}>
-          <line x1={12 + index * 22} y1={y - 8} x2={12 + index * 22} y2={y + bodyH + 8} stroke="var(--accent)" strokeWidth="1.2" />
-          <rect x={8 + index * 22} y={y} width="8" height={bodyH} fill="var(--accent)" opacity={up ? 0.9 : 0.4} rx="1.5" />
-        </g>;
-      })}
-      <path className="viz-flow" d="M6 62 C 40 54, 60 40, 92 44 S 150 22, 196 14" pathLength="100" stroke="var(--accent)" strokeWidth="1.4" strokeDasharray="4 6" opacity=".8" />
-    </svg>
-  </div>;
-  if (kind === "network") return <div className="rowviz" aria-hidden="true">
-    <svg className="rv-net" viewBox="0 0 200 84" fill="none">
-      <path d="M20 62 L64 26 L112 48 L156 18 M64 26 L96 66 L156 18 M112 48 L176 60" stroke="var(--accent)" strokeWidth="1" opacity=".3" />
-      {[[20, 62], [64, 26], [112, 48], [156, 18], [96, 66], [176, 60]].map(([x, y], index) => <circle key={index} cx={x} cy={y} r={index % 3 === 0 ? 5 : 3.4} fill="var(--accent)" opacity={0.5 + (index % 3) * 0.22} style={{ animationDelay: `${index * 0.5}s` }} className="rv-node" />)}
-      <circle className="rv-pulse" r="2.6" fill="var(--accent)"><animateMotion dur="6s" repeatCount="indefinite" path="M20 62 L64 26 L112 48 L156 18" /></circle>
-    </svg>
-  </div>;
-  return <div className="rowviz" aria-hidden="true">
-    <svg className="rv-fork" viewBox="0 0 200 84" fill="none">
-      <path d="M8 42 H 84" stroke="var(--accent)" strokeWidth="1.6" />
-      <path className="rv-branch" d="M84 42 C 110 42, 118 20, 146 18 H 186" stroke="var(--accent)" strokeWidth="1.4" opacity=".75" />
-      <path className="rv-branch rv-branch-2" d="M84 42 C 112 42, 122 44, 148 44 H 186" stroke="var(--accent)" strokeWidth="1.4" opacity=".45" strokeDasharray="5 6" />
-      <path className="rv-branch rv-branch-3" d="M84 42 C 110 42, 118 64, 146 66 H 186" stroke="var(--accent)" strokeWidth="1.4" opacity=".3" strokeDasharray="5 6" />
-      <circle cx="190" cy="18" r="4" fill="var(--accent)" />
-      <circle cx="190" cy="44" r="3" fill="var(--accent)" opacity=".45" />
-      <circle cx="190" cy="66" r="3" fill="var(--accent)" opacity=".28" />
-      <circle className="rv-pulse" r="2.6" fill="var(--accent)"><animateMotion dur="5s" repeatCount="indefinite" path="M8 42 H 84 C 110 42, 118 20, 146 18 H 186" /></circle>
-    </svg>
-  </div>;
+function PixelHeart() {
+  const shape=[".XX.XX.","XXXXXXX","XXXXXXX",".XXXXX.","..XXX..","...X..."];
+  return <div className="pixel-heart" aria-hidden="true">{shape.flatMap((row,y)=>[...row].map((pixel,x)=>pixel==="X"?<i key={`${x}-${y}`} style={{"--pixel":x+y*2,gridColumn:x+1,gridRow:y+1} as CSSProperties}/>:null))}</div>;
 }
 
 export default function Site() {
-  const [menu, setMenu] = useState(false);
-  const [status, setStatus] = useState("");
-  const [copyFallback, setCopyFallback] = useState("");
-  const [brief, setBrief] = useState({ name: "", email: "", company: "", question: "" });
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const menuButton = useRef<HTMLButtonElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
-  const dotRef = useRef<HTMLDivElement>(null);
-  const ringRef = useRef<HTMLDivElement>(null);
+  const [introStage,setIntroStage]=useState<IntroStage>("pending");
+  const [menu,setMenu]=useState(false);
+  const [navHidden,setNavHidden]=useState(false);
+  const [theme,setTheme]=useState<"dark"|"light">("dark");
+  const [openQuestion,setOpenQuestion]=useState<number|null>(null);
+  const [status,setStatus]=useState("");
+  const [sending,setSending]=useState(false);
+  const [brief,setBrief]=useState({name:"",email:"",company:"",question:""});
+  const menuButton=useRef<HTMLButtonElement>(null);
+  const header=useRef<HTMLElement>(null);
+  const content=useRef<HTMLDivElement>(null);
+  const progress=useRef<HTMLDivElement>(null);
+  const hiddenRef=useRef(false);
 
-  useEffect(() => {
-    setTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
-  }, []);
+  useEffect(()=>{try {const saved=localStorage.getItem("ifagrithm-theme");if(saved==="light"||saved==="dark")setTheme(saved);}catch{}},[]);
+  useEffect(()=>{document.documentElement.dataset.theme=theme;},[theme]);
 
-  function toggleTheme() {
-    const next = theme === "dark" ? "light" : "dark";
-    const html = document.documentElement;
-    // cross-fade: blanket transitions for 650ms, then release them
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      html.classList.add("theme-fade");
-      setTimeout(() => html.classList.remove("theme-fade"), 650);
-    }
-    html.dataset.theme = next;
-    try { localStorage.setItem("ifg-theme", next); } catch { /* private mode */ }
-    setTheme(next);
-  }
-
-  useEffect(() => {
-    if (!menu) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") { setMenu(false); menuButton.current?.focus(); }
+  useEffect(()=>{
+    const reduced=window.matchMedia("(prefers-reduced-motion: reduce)");
+    const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{
+      const el=entry.target as HTMLElement;
+      if(entry.isIntersecting)el.dataset.visible="true";
+      else if(entry.boundingClientRect.bottom<0||entry.boundingClientRect.top>window.innerHeight)el.dataset.visible="false";
+    }),{threshold:.08});
+    document.querySelectorAll("[data-reveal-section]").forEach(el=>observer.observe(el));
+    let frame=0;
+    const update=()=>{
+      frame=0;
+      const y=window.scrollY,vh=window.innerHeight,maximum=document.documentElement.scrollHeight-vh;
+      const exit=reduced.matches?0:1-Math.pow(1-Math.min(1,y/(.6*vh)),3);
+      content.current?.style.setProperty("--hero-exit",String(exit));
+      if(progress.current)progress.current.style.transform=`scaleX(${maximum>0?y/maximum:0})`;
+      if(header.current)header.current.dataset.scrolled=String(y>40);
+      const hidden=y>vh*.55;
+      if(hidden!==hiddenRef.current){hiddenRef.current=hidden;setNavHidden(hidden);}
     };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [menu]);
+    const schedule=()=>{if(!frame)frame=requestAnimationFrame(update);};
+    window.addEventListener("scroll",schedule,{passive:true});window.addEventListener("resize",schedule);reduced.addEventListener("change",schedule);update();
+    return()=>{observer.disconnect();cancelAnimationFrame(frame);window.removeEventListener("scroll",schedule);window.removeEventListener("resize",schedule);reduced.removeEventListener("change",schedule);};
+  },[]);
 
-  // sections arrive as you reach them
-  useEffect(() => {
-    const items = Array.from(document.querySelectorAll("[data-reveal]"));
-    if (!items.length) return;
-    const io = new IntersectionObserver(entries => {
-      for (const entry of entries) if (entry.isIntersecting) {
-        const el = entry.target as HTMLElement;
-        // stagger arrives via animation-delay when an element declares transition-delay
-        if (el.style.transitionDelay) el.style.animationDelay = el.style.transitionDelay;
-        el.classList.add("is-in");
-        io.unobserve(el);
+  useEffect(()=>{
+    if(!menu)return;
+    const el=header.current;if(!el)return;
+    const root=document.documentElement,previous=root.style.overflow;root.style.overflow="hidden";
+    el.querySelector<HTMLAnchorElement>("nav a")?.focus();
+    const escape=(event:KeyboardEvent)=>{
+      if(event.key==="Escape"){setMenu(false);menuButton.current?.focus();}
+      if(event.key==="Tab"){
+        const items=Array.from(el.querySelectorAll<HTMLElement>("a,button")).filter(item=>item.getBoundingClientRect().width>0);
+        const first=items[0],last=items[items.length-1];
+        if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+        else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
       }
-    }, { threshold: 0.1 });
-    items.forEach(item => io.observe(item));
-    return () => io.disconnect();
-  }, []);
-
-  // ultra motion: scroll progress, cursor layer, row spotlight, magnetic CTAs
-  useEffect(() => {
-    const fine = window.matchMedia("(pointer: fine)").matches;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    // gold scroll progress
-    const bar = progressRef.current;
-    let progressRaf = 0;
-    const onScroll = () => {
-      if (progressRaf || !bar) return;
-      progressRaf = requestAnimationFrame(() => {
-        progressRaf = 0;
-        const max = document.documentElement.scrollHeight - window.innerHeight;
-        bar.style.transform = `scaleX(${max > 0 ? Math.min(1, window.scrollY / max) : 0})`;
-      });
     };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
+    window.addEventListener("keydown",escape);
+    return()=>{root.style.overflow=previous;window.removeEventListener("keydown",escape);};
+  },[menu]);
 
-    const cleanups: (() => void)[] = [];
-
-    if (fine && !reduced) {
-      // services spotlight follows the cursor
-      const spotRows = Array.from(document.querySelectorAll<HTMLElement>(".service-row"));
-      const onSpot = (event: PointerEvent) => {
-        const row = event.currentTarget as HTMLElement;
-        const rect = row.getBoundingClientRect();
-        row.style.setProperty("--mx", `${event.clientX - rect.left}px`);
-        row.style.setProperty("--my", `${event.clientY - rect.top}px`);
-      };
-      spotRows.forEach(row => row.addEventListener("pointermove", onSpot));
-      cleanups.push(() => spotRows.forEach(row => row.removeEventListener("pointermove", onSpot)));
-
-      // CTAs lean toward the cursor
-      const magnetButtons = Array.from(document.querySelectorAll<HTMLElement>(".primary"));
-      const onMagnet = (event: PointerEvent) => {
-        const btn = event.currentTarget as HTMLElement;
-        const rect = btn.getBoundingClientRect();
-        const dx = event.clientX - (rect.left + rect.width / 2);
-        const dy = event.clientY - (rect.top + rect.height / 2);
-        btn.style.transform = `translate(${Math.max(-8, Math.min(8, dx * 0.14))}px, ${Math.max(-6, Math.min(6, dy * 0.3))}px)`;
-      };
-      const onLeave = (event: PointerEvent) => { (event.currentTarget as HTMLElement).style.transform = ""; };
-      magnetButtons.forEach(btn => {
-        btn.addEventListener("pointermove", onMagnet);
-        btn.addEventListener("pointerleave", onLeave);
-      });
-      cleanups.push(() => magnetButtons.forEach(btn => {
-        btn.removeEventListener("pointermove", onMagnet);
-        btn.removeEventListener("pointerleave", onLeave);
-      }));
-
-      // gold cursor: instant dot, trailing ring that grows over interactive elements
-      const dot = dotRef.current;
-      const ring = ringRef.current;
-      if (dot && ring) {
-        document.documentElement.classList.add("has-cursor");
-        let x = window.innerWidth / 2, y = window.innerHeight / 2, ringX = x, ringY = y, cursorRaf = 0, active = false;
-        const onMove = (event: PointerEvent) => {
-          x = event.clientX; y = event.clientY;
-          dot.style.transform = `translate(${x}px, ${y}px)`;
-          const hit = (event.target as Element | null)?.closest?.("a, button, summary, .service-row, .map-node");
-          const now = Boolean(hit);
-          if (now !== active) { active = now; ring.classList.toggle("is-active", now); }
-        };
-        const loop = () => {
-          ringX += (x - ringX) * 0.16;
-          ringY += (y - ringY) * 0.16;
-          ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
-          cursorRaf = requestAnimationFrame(loop);
-        };
-        window.addEventListener("pointermove", onMove, { passive: true });
-        cursorRaf = requestAnimationFrame(loop);
-        cleanups.push(() => {
-          document.documentElement.classList.remove("has-cursor");
-          window.removeEventListener("pointermove", onMove);
-          cancelAnimationFrame(cursorRaf);
-        });
-      }
-    }
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (progressRaf) cancelAnimationFrame(progressRaf);
-      cleanups.forEach(fn => fn());
-    };
-  }, []);
-
-  function briefText() {
-    return `IFAGRITHM PROJECT BRIEF\n\nName: ${brief.name.trim()}\nWork email: ${brief.email.trim()}\nCompany: ${brief.company.trim() || "Not provided"}\n\nWhat would you like us to investigate?\n${brief.question.trim()}`;
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>) {
+  function toggleTheme(){const next=theme==="dark"?"light":"dark";setTheme(next);try{localStorage.setItem("ifagrithm-theme",next);}catch{}}
+  async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault();
-    if (!brief.name.trim() || !brief.email.trim() || !brief.question.trim()) {
-      setStatus("Please complete your name, work email and research question.");
-      return;
-    }
-    const subject = `IFAGRITHM project brief${brief.company.trim() ? ` — ${brief.company.trim()}` : ""}`;
-    const mailto = `mailto:${EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(briefText())}`;
-    setStatus("Review and send your brief in your email app. If it does not open, use Copy brief or the email link.");
-    window.location.assign(mailto);
+    if(!brief.name.trim()||!brief.email.trim()||!brief.question.trim()){setStatus("Complete your name, work email, and research question.");return;}
+    setSending(true);setStatus("");
+    try{const res=await fetch("/api/enquiries",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(brief)});
+      if(!res.ok)throw new Error();setStatus("Your enquiry is saved. We will reply by email.");setBrief({name:"",email:"",company:"",question:""});
+    }catch{setStatus("We could not save your enquiry. Email Ifagrithm@gmail.com or use the email option below.");}
+    finally{setSending(false);}
   }
 
-  async function copyBrief() {
-    const text = briefText();
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopyFallback("");
-      setStatus("Brief copied. Paste it into an email when you are ready.");
-    } catch {
-      setCopyFallback(text);
-      setStatus("Automatic copying is unavailable. Select and copy your brief below, then email it to us.");
-    }
-  }
+  const introBlocks=introStage==="opening"||introStage==="revealing";
 
   return <>
-    <Preloader />
-    <div className="ambient-a" aria-hidden="true" />
-    <div className="ambient-b" aria-hidden="true" />
-    <div className="scroll-progress" ref={progressRef} aria-hidden="true" />
-    <div className="cursor-dot" ref={dotRef} aria-hidden="true" />
-    <div className="cursor-ring" ref={ringRef} aria-hidden="true" />
-    <a className="skip-link" href="#main">Skip to content</a>
-    <header className="site-header" id="top">
-      <div className="shell header-inner">
-        <Brand />
-        <nav id="primary-navigation" aria-label="Main navigation" className={`nav-links${menu ? " is-open" : ""}`}>
-          <a href="#services" onClick={() => setMenu(false)}>Services</a>
-          <a href="#approach" onClick={() => setMenu(false)}>Approach</a>
-          <a href="#faq" onClick={() => setMenu(false)}>FAQ</a>
-          <a href="/application" onClick={() => setMenu(false)}>Join the network</a>
-          <a className="nav-cta" href="#contact" onClick={() => setMenu(false)}>Discuss a project <Arrow diagonal /></a>
-        </nav>
-        <div className="nav-actions">
-          <button className="icon-button theme-toggle" type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"} title="Toggle theme">
-            {theme === "dark" ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4.4" stroke="currentColor" strokeWidth="1.6" /><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5m14 0h2.4M5.3 5.3l1.7 1.7m9.9 9.9 1.7 1.7m0-13.4-1.7 1.7M7 17l-1.7 1.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
-            )}
-          </button>
-          <button ref={menuButton} className="icon-button menu-button" type="button" onClick={() => setMenu(current => !current)} aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} aria-controls="primary-navigation"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={menu ? "m6 6 12 12M6 18 18 6" : "M4 8h16M4 16h16"} stroke="currentColor" strokeWidth="1.5" /></svg></button>
-        </div>
-      </div>
-    </header>
-
-    <main id="main">
-      <section className="hero" aria-labelledby="hero-title">
-        <HeroScene variant={0} />
-        <span className="hero-watermark" aria-hidden="true">IFAGRITHM</span>
-        <div className="hero-vignette" aria-hidden="true" />
-        <div className="hero-hud" aria-hidden="true">
-          <span className="hud-tl">IFG — 01</span>
-          <span className="hud-tr">EST. MMXXVI</span>
-          <span className="hud-bl">OBSERVE · UNDERSTAND · INVESTIGATE · EXPLORE</span>
-        </div>
-        <div className="shell hero-inner">
-          <div className="hero-copy">
-            <p className="chip-row rise" style={{ animationDelay: ".1s" }}>{heroChips.map(chip => <span className="chip" key={chip}>{chip}</span>)}</p>
-            <h1 id="hero-title" aria-label="Understand your users. Find where growth can come from.">
-              <span className="line" aria-hidden="true"><Words text="Understand your" base={0.25} />{" "}<span className="word-cycle"><span className="word-cycle-track"><b>users.</b><b>market.</b><b>growth.</b><b>next move.</b><b>users.</b></span></span></span>
-              <span className="line gold" aria-hidden="true"><Words text="Find where growth can come from." base={0.55} /></span>
-            </h1>
-            <p className="hero-body rise" style={{ animationDelay: "1.05s" }}>IFAGRITHM helps Web3 teams understand what their users do, identify meaningful behavioural segments, and investigate where similar users already are.</p>
-            <div className="hero-actions rise" style={{ animationDelay: "1.2s" }}>
-              <a className="primary" href="#contact">Discuss a project <Arrow diagonal /></a>
-              <a className="quiet-link" href={`mailto:${EMAIL}`}>{EMAIL} <Arrow diagonal /></a>
-            </div>
-          </div>
-        </div>
-        <div className="scroll-hint" aria-hidden="true"><span className="scroll-mouse"><i /></span>Scroll</div>
-      </section>
-
-      <div className="ticker" aria-hidden="true">
-        <div className="ticker-track">{[...tickerItems, ...tickerItems].map((item, index) => <span className="ticker-item" key={`${item}-${index}`}><span className="ticker-mark">✦</span>{item}</span>)}</div>
-      </div>
-
-      <div className="ticker ticker-reverse" aria-hidden="true">
-        <div className="ticker-track">{[...sectors, ...sectors].map((sector, index) => <span className="ticker-item" key={`${sector}-${index}`}><span className="ticker-mark">◆</span>{sector}</span>)}</div>
-      </div>
-
-      <section className="services section" id="services" aria-labelledby="services-title" data-reveal>
-        <div className="shell">
-          <div className="section-heading"><p className="eyebrow">WHAT WE DO</p><h2 id="services-title">Research built around<br />your next decision.</h2></div>
-          <div className="service-rows">{services.map((service, index) => <article className="service-row arrive-x" key={service.title} data-reveal style={{ transitionDelay: `${index * 110}ms`, "--from-x": `${120 + index * 60}px` } as React.CSSProperties}>
-            <span className="service-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-            <div className="service-main"><h3>{service.title}</h3><p>{service.description}</p></div>
-            <div className="service-side"><span className="micro-label">Typical outputs</span><ul>{service.outputs.map(output => <li key={output}>{output}</li>)}</ul></div>
-            <RowViz kind={service.motif} />
-          </article>)}</div>
-        </div>
-      </section>
-
-      <section className="evidence section" aria-labelledby="evidence-title" data-reveal>
-        <div className="shell">
-          <p className="eyebrow">WHAT GOES INTO THE RESEARCH</p>
-          <h2 id="evidence-title">Three kinds of evidence.<br />One clear answer.</h2>
-          <p className="section-sub">Every brief draws on a different mix of these, chosen for the decision in front of you. Individually each one says something; together they say something you can bet on.</p>
-          <div className="evidence-grid">{evidence.map((item, index) => <article className="evidence-card arrive" key={item.title} data-reveal style={{ transitionDelay: `${200 + index * 110}ms` }}>
-            <EvidenceViz kind={item.viz} />
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
-          </article>)}</div>
-        </div>
-      </section>
-
-      <section className="mapband section" aria-labelledby="mapband-title" data-reveal="words">
-        <div className="shell mapband-grid">
-          <div className="mapband-copy" data-reveal>
-            <p className="eyebrow">THE SHAPE OF A BRIEF</p>
-            <h2 id="mapband-title">{RW({ text: "From product activity" })}<br />{RW({ text: "to acquisition.", start: 3 })}</h2>
-            <p>Every brief follows the same spine: observe what is happening, understand who it is happening with, investigate where similar people already are, then explore the routes worth testing.</p>
-            <p>The steps flex to the question. Some briefs live entirely in the first two stages, others run the full route through to acquisition hypotheses and the measurement that follows.</p>
-          </div>
-          <ResearchMap />
-        </div>
-      </section>
-
-      <section className="approach section" id="approach" aria-labelledby="approach-title" data-reveal>
-        <span id="method" className="anchor-alias" aria-hidden="true" /><span id="about" className="anchor-alias" aria-hidden="true" />
-        <div className="shell">
-          <p className="eyebrow">HOW WE WORK</p>
-          <h2 id="approach-title">A clear question. <span>Evidence you can inspect.</span> A useful next step.</h2>
-          <p className="section-sub">Nothing in the process exists for its own sake. Each step ends with something you can read, question and use, and the brief is written for the people who have to make the call.</p>
-          <ol className="approach-steps">{approach.map(([title, description], index) => <li className="arrive" key={title} data-reveal style={{ transitionDelay: `${200 + index * 120}ms` }}><span className="step-index">{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{description}</p></li>)}</ol>
-        </div>
-      </section>
-
-      <section className="sectors" aria-label="Who we work with" data-reveal>
-        <div className="shell sectors-inner">
-          <p>Web3 teams making product and growth decisions. These are the lanes where the research usually lands.</p>
-          <div className="sector-row">{sectors.map(sector => <span className="sector-chip" key={sector}>{sector}</span>)}</div>
-        </div>
-      </section>
-
-      <section className="faq section" id="faq" aria-labelledby="faq-title" data-reveal="words">
-        <div className="shell faq-grid">
-          <div className="faq-copy" data-reveal>
-            <p className="eyebrow">COMMON QUESTIONS</p>
-            <h2 id="faq-title">{RW({ text: "Straight answers," })}<br />{RW({ text: "before you ask.", start: 2 })}</h2>
-            <p className="faq-more">Something else on your mind? <a href="#contact">Tell us what you are trying to understand</a>.</p>
-          </div>
-          <div className="faq-list" data-reveal>{faq.map(item => <details className="faq-item" key={item.q}>
-            <summary>{item.q}<span className="faq-icon" aria-hidden="true" /></summary>
-            <div className="faq-body"><p>{item.a}</p></div>
-          </details>)}</div>
-        </div>
-      </section>
-
-      <section className="contact section" id="contact" aria-labelledby="contact-title" data-reveal="words">
-        <div className="shell contact-grid">
-          <div className="contact-copy" data-reveal><p className="eyebrow">START A PROJECT</p><h2 id="contact-title">{RW({ text: "What are you trying to understand?" })}</h2><p>Tell us about your product and the decision you are working through.</p><a className="email-link" href={`mailto:${EMAIL}`}>{EMAIL} <Arrow diagonal /></a><div className="social-links"><a href={X_URL} target="_blank" rel="noopener noreferrer">X / @ifagrithm <Arrow diagonal /></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow diagonal /></a></div></div>
-          <form className="brief-form" onSubmit={submit} data-reveal>
-            <div className="form-row"><label htmlFor="brief-name">Name <span aria-hidden="true">*</span><input id="brief-name" name="name" required autoComplete="name" maxLength={200} value={brief.name} onChange={event => setBrief({ ...brief, name: event.target.value })} /></label><label htmlFor="brief-email">Work email <span aria-hidden="true">*</span><input id="brief-email" name="email" required type="email" autoComplete="email" maxLength={254} value={brief.email} onChange={event => setBrief({ ...brief, email: event.target.value })} /></label></div>
-            <label htmlFor="brief-company">Company <span className="optional">(optional)</span><input id="brief-company" name="company" autoComplete="organization" maxLength={200} value={brief.company} onChange={event => setBrief({ ...brief, company: event.target.value })} /></label>
-            <label htmlFor="brief-question">What would you like us to investigate? <span aria-hidden="true">*</span><textarea id="brief-question" name="question" required maxLength={4000} rows={5} value={brief.question} onChange={event => setBrief({ ...brief, question: event.target.value })} /></label>
-            <div className="form-actions"><button className="primary" type="submit">Open email with your brief <Arrow diagonal /></button><button className="text-button" type="button" onClick={copyBrief}>Copy brief <Arrow /></button></div>
-            <p className="form-helper">Opens your email app. Review and send your message there.</p>
-            <p className="form-status" role="status">{status}</p>
-            {copyFallback && <label className="copy-fallback" htmlFor="copy-fallback">Your brief to copy<textarea id="copy-fallback" readOnly value={copyFallback} rows={8} onFocus={event => event.currentTarget.select()} /></label>}
-          </form>
-        </div>
-      </section>
-    </main>
-
-    <footer className="site-footer" data-reveal="ghost"><div className="shell footer-inner"><div><Brand /><p>Web3 research. Clearer decisions.</p></div><nav aria-label="Footer navigation"><a href="#services">Services</a><a href="#faq">FAQ</a><a href="#contact">Contact</a><a href="/application">Join the network</a><a href={X_URL} target="_blank" rel="noopener noreferrer">X <Arrow diagonal /></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow diagonal /></a></nav><small>© {new Date().getFullYear()} IFAGRITHM</small></div><div className="footer-ghost" aria-hidden="true">IFAGRITHM</div></footer>
+    {introStage!=="ready"?<IntroScreen onStageChange={setIntroStage}/>:null}
+    <div className="site-content" data-intro={introStage} ref={content} inert={introBlocks} aria-hidden={introBlocks}>
+      <a className="skip-link" href="#main">Skip to content</a><div className="reading-progress" ref={progress} aria-hidden="true"/>
+      <header className="site-header" ref={header} data-nav-hidden={navHidden}><div className="header-inner"><Brand/><nav id="primary-navigation" className={`navigation${menu?" is-open":""}`} aria-label="Main navigation" inert={navHidden} aria-hidden={navHidden}>{links.map(link=><a key={link.href} href={link.href} onClick={()=>setMenu(false)}>{link.label}</a>)}</nav><div className="header-actions" inert={navHidden} aria-hidden={navHidden}><a className="button button-outline header-cta" href="#contact">Discuss a project <Arrow/></a><button className="theme-button" type="button" onClick={toggleTheme} aria-label={`Switch to ${theme==="dark"?"light":"dark"} mode`}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.5"/><path d="M12 5a7 7 0 0 1 0 14Z" fill="currentColor"/></svg></button><button className="menu-button" ref={menuButton} type="button" onClick={()=>setMenu(current=>!current)} aria-label={menu?"Close menu":"Open menu"} aria-expanded={menu} aria-controls="primary-navigation"><span/><span/></button></div></div></header>
+      {menu?<div className="menu-scrim" onClick={()=>setMenu(false)} aria-hidden="true"/>:null}
+      <main id="main">
+        <section className="hero" id="top" aria-label="IFAGRITHM research and intelligence"><HeroSignals/><div className="hero-content"><div className="hero-mark-motion"><div className="hero-mark hero-enter"><BrandMark priority/><span className="hero-logo-scan"/></div></div><div className="hero-copyblock"><RotatingHeadline running={introStage==="revealing"||introStage==="ready"}/><p className="hero-copy hero-enter">User behaviour, <span className="research-pill"><span className="research-pill-icons" aria-hidden="true"><i>U</i><i>M</i><i>G</i><i>D</i></span>market research</span>, and competitor intelligence<br className="desktop-break"/> for clearer business decisions.</p><div className="hero-actions hero-enter"><a className="button button-primary" href="#contact">Discuss a project <Arrow/></a><a className="button button-soft" href="#services">Our services</a></div></div></div><a className="scroll-cue hero-enter" href="#services" aria-label="Explore our research services"><span>Scroll to explore</span><i><span/></i></a></section>
+        <FeatureSection/>
+        <section className="method-scroll" id="approach" aria-labelledby="approach-title"><span className="anchor-alias" id="method"/><span className="anchor-alias" id="about"/><div className="method-sticky shell" data-reveal-section><div className="method-grid"><div className="method-copy"><h2 className="section-heading enter-item" id="approach-title">Evidence you can inspect.<br/>A next step you can use.</h2><p className="enter-item">A research process built around the decision your team needs to make.</p><div className="method-note enter-item">Onchain activity, market information, and qualitative research. <strong>The question decides the method.</strong></div><a className="button button-outline enter-item" href="#contact">Start a project <Arrow/></a></div><div className="method-network"><div className="method-line"><i/></div>{stages.map((stage,index)=><div className={`method-row method-row-${index}`} key={stage.label} style={{"--stage":index} as CSSProperties}><span className="method-node"/><div className="method-row-copy"><div className="method-avatars" aria-hidden="true">{stage.nodes.map((node,nodeIndex)=><span className={`method-avatar avatar-tone-${nodeIndex%4}`} key={nodeIndex} style={{"--avatar":nodeIndex} as CSSProperties}>{node}</span>)}</div><span className="method-stage-label">{stage.title}</span><p>{stage.text}</p></div><span className="method-number">0{index+1}<span>{stage.label}</span></span></div>)}</div></div></div></section>
+        <section className="focus-scroll" id="focus" aria-labelledby="focus-title"><div className="focus-sticky" data-reveal-section><HeroSignals/><div className="focus-inner"><p className="focus-eyebrow enter-item">Every study starts with</p><span className="focus-caption enter-item">FROM BEHAVIOUR TO DECISIONS</span><h2 id="focus-title" className="focus-number enter-item"><Odometer value="01" delay={.42}/><span>question.</span></h2><div className="focus-stats"><div className="focus-stat enter-item"><Odometer value="4" delay={1.4}/><span>research areas</span></div><i/><div className="focus-stat enter-item"><Odometer value="3" delay={1.56}/><span>research stages</span></div><i/><div className="focus-stat enter-item"><Odometer value="1" delay={1.72}/><span>decision to inform</span></div></div></div></div></section>
+        <section className="faq-scroll" id="faq" aria-labelledby="faq-title"><div className="faq-sticky shell" data-reveal-section><div className="faq-heading enter-item"><h2 className="section-heading" id="faq-title">Questions, answered</h2><p>Have a different question? <a href={`mailto:${EMAIL}`}>Talk to us <Arrow/></a></p></div><div className="faq-list">{questions.map((item,index)=><article className={`faq-row${openQuestion===index?" is-open":""}`} key={item.question} style={{"--row":index} as CSSProperties}><h3><button type="button" className="faq-toggle" aria-expanded={openQuestion===index} aria-controls={`faq-answer-${index}`} onClick={()=>setOpenQuestion(current=>current===index?null:index)}><span className="faq-index">0{index+1}</span><span>{item.question}</span><span className="faq-plus" aria-hidden="true"><i/><i/></span></button></h3><div className="faq-answer" id={`faq-answer-${index}`} inert={openQuestion!==index} aria-hidden={openQuestion!==index}><div><p>{item.answer}</p>{item.contact?<a className="faq-contact-link" href="#contact">Discuss your project <Arrow/></a>:null}</div></div></article>)}</div></div></section>
+        <section className="outro-scroll" aria-labelledby="outro-title"><div className="outro-sticky" data-reveal-section><BriefWall backdrop/><div className="outro-content"><PixelHeart/><h2 className="section-heading enter-item" id="outro-title">Make your next decision<br/>with evidence.</h2><p className="enter-item">Research for Web3 teams.<br/>From behaviour to decisions.</p><a className="button button-primary enter-item" href="#contact">Discuss a project <Arrow/></a></div></div></section>
+        <section className="contact-section shell" id="contact" aria-labelledby="contact-title" data-reveal-section><div className="contact-grid"><div className="contact-copy enter-item"><span className="eyebrow">START A PROJECT</span><h2 className="section-heading" id="contact-title">What are you trying<br/>to understand?</h2><p>Tell us about your product and the decision you are working through.</p><a className="email-link" href={`mailto:${EMAIL}`}>{EMAIL}</a><div className="social-links"><a href={X_URL} target="_blank" rel="noopener noreferrer">X / @ifagrithm <Arrow/></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow/></a></div></div><form className="brief-form enter-item" onSubmit={submit}><div className="form-row"><label htmlFor="brief-name">Name<input id="brief-name" name="name" autoComplete="name" required maxLength={200} placeholder="Your name" value={brief.name} onChange={event=>setBrief({...brief,name:event.target.value})}/></label><label htmlFor="brief-email">Work email<input id="brief-email" name="email" type="email" autoComplete="email" required maxLength={254} placeholder="you@company.com" value={brief.email} onChange={event=>setBrief({...brief,email:event.target.value})}/></label></div><label htmlFor="brief-company">Company <span className="optional">(optional)</span><input id="brief-company" name="company" autoComplete="organization" maxLength={200} placeholder="Your team or product" value={brief.company} onChange={event=>setBrief({...brief,company:event.target.value})}/></label><label htmlFor="brief-question">What would you like us to investigate?<textarea id="brief-question" name="question" required maxLength={4000} rows={3} placeholder="The decision, the challenge, or the question…" value={brief.question} onChange={event=>setBrief({...brief,question:event.target.value})}/></label><button className="button button-primary" type="submit" disabled={sending}>{sending?"Sending…":"Submit enquiry"} <Arrow/></button><p className="form-helper">Your enquiry goes to our project review inbox.</p><p className="form-status" role="status">{status}</p><a className="enquiry-email" href={`mailto:${EMAIL}?subject=${encodeURIComponent("IFAGRITHM project enquiry")}&body=${encodeURIComponent(`Name: ${brief.name}\nEmail: ${brief.email}\nCompany: ${brief.company}\n\n${brief.question}`)}`}>Send through your email app</a></form></div></section>
+      </main>
+      <footer className="site-footer"><div className="shell"><div className="footer-top"><Brand footer/><nav aria-label="Footer navigation">{links.filter(link=>link.href!=="#focus").map(link=><a href={link.href} key={link.href}>{link.label}</a>)}<a href={X_URL} target="_blank" rel="noopener noreferrer">X <Arrow/></a></nav><a className="back-to-top" href="#top">Back to top <Arrow direction="up"/></a></div><div className="footer-meta"><span>© 2026 IFAGRITHM</span><span>From behaviour to decisions.</span></div></div><GlyphFooter/></footer>
+    </div>
   </>;
 }

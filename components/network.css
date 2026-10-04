@@ -717,3 +717,5 @@
   .is-live .ifg-photo-sheen { animation: none; transform: none; }
   .ifg-btn-gold::after { display: none; }
 }
+.ifg-studio{--accent:var(--gold);--font-display:var(--sans);--font-mono:var(--sans);--igold:var(--gold)}.ifg-panel{border-radius:22px}.ifg-field input,.ifg-field textarea{font-size:16px}.ifg-card-serial{font-size:18px;letter-spacing:.13em;color:#a89762;position:absolute;top:30px;right:35px}.ifg-btn:disabled,.ifg-seg button:disabled{cursor:default}.ifg-field input:read-only{color:var(--gold)}
+.ifg-card-serial{top:auto;bottom:38px;right:60px;font-size:16px}.ifg-monogram img{opacity:.12}.ifg-monogram span{position:relative}

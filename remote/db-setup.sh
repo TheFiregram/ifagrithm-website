@@ -31,11 +31,15 @@ CREATE TABLE applications (
   context     text NOT NULL DEFAULT '',
   why         text NOT NULL,
   status      text NOT NULL DEFAULT 'pending',
+  tier        text CHECK (tier IN ('bronze', 'silver', 'gold')),
   claim_token text,
   claimed_at  timestamptz
 );
 CREATE INDEX applications_status_idx ON applications (status, created_at DESC);
 CREATE UNIQUE INDEX applications_claim_token_idx ON applications (claim_token);
+CREATE TABLE enquiries (id serial PRIMARY KEY, created_at timestamptz NOT NULL DEFAULT now(),name text NOT NULL,email text NOT NULL,company text NOT NULL DEFAULT '',question text NOT NULL);
+GRANT SELECT,INSERT,UPDATE ON enquiries TO ifagrithm_app;
+GRANT USAGE,SELECT ON SEQUENCE enquiries_id_seq TO ifagrithm_app;
 GRANT USAGE ON SCHEMA public TO ifagrithm_app;
 GRANT SELECT, INSERT, UPDATE ON applications TO ifagrithm_app;
 GRANT USAGE, SELECT ON SEQUENCE applications_id_seq TO ifagrithm_app;

@@ -4,8 +4,9 @@ import CardStudio from "@/components/CardStudio";
 
 export const metadata: Metadata = {
   title: "Card Studio — IFAGRITHM Research Network",
-  description: "Internal preview of the IFAGRITHM network member card.",
+  description: "Create your approved IFAGRITHM research network member card.",
   robots: { index: false, follow: false },
+  alternates: { canonical: "/network" },
 };
 
 export default function NetworkPage() {

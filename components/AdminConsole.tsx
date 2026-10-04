@@ -6,6 +6,7 @@
 
 import { Fragment, useCallback, useEffect, useState } from "react";
 import "./admin.css";
+import EnquiryConsole from "./EnquiryConsole";
 
 type Application = {
   id: number;
@@ -53,7 +54,7 @@ export default function AdminConsole() {
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/applications", { cache: "no-store" });
     if (res.status === 401) { setAuthed(false); return; }
-    if (!res.ok) { setError("Store unreachable — is the Contabo box up?"); setAuthed(true); return; }
+    if (!res.ok) { setError("Application records are unavailable. Check the backend connection."); setAuthed(true); return; }
     const data = await res.json();
     setApps(data.applications ?? []);
     setError("");
@@ -70,7 +71,7 @@ export default function AdminConsole() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ password }),
     });
-    if (!res.ok) { setError("Wrong password."); return; }
+    if (!res.ok) { setError(res.status === 503 ? "Admin access is not configured yet." : "Wrong password."); return; }
     setPassword("");
     load();
   }
@@ -201,6 +202,7 @@ export default function AdminConsole() {
       </aside>
 
       <main className="adm-main">
+        <EnquiryConsole/>
         <header className="adm-head">
           <h1>Applications</h1>
           <button className="adm-ghost" type="button" onClick={load}>Refresh</button>

@@ -313,3 +313,5 @@
 @media (max-width: 700px) {
   .adm-login { margin-top: 10vh; }
 }
+.adm-shell,.adm-login{--accent:var(--gold);--font-display:var(--sans);--font-mono:var(--sans);--line-strong:var(--line)}.adm-enquiries{padding:24px 0;display:grid;gap:16px}.adm-enquiry{border:1px solid var(--line);border-radius:18px;padding:24px;background:var(--surface)}.adm-enquiry h3{font-size:20px;font-weight:400}.adm-enquiry p{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:12px}.adm-enquiry small{color:var(--muted)}
+.adm-main,.adm-side{min-width:0}.adm-table-wrap{max-width:100%}.adm-login{width:min(420px,calc(100% - 40px))}@media(max-width:800px){.adm-shell{grid-template-columns:minmax(0,1fr);padding:24px 20px 60px}.adm-side{position:relative;top:auto}.adm-filters{display:grid;grid-template-columns:1fr 1fr}.adm-head{flex-wrap:wrap}.adm-table-wrap{width:100%}}

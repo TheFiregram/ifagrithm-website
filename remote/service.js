@@ -72,7 +72,7 @@ function validateApplication(body) {
     if (!value && field !== "context") errors.push(`${field} is required`);
   }
   if (app.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(app.email)) errors.push("email is not valid");
-  if (!ROLES.has(body.role)) errors.push("role must be scout or analyst");
+  if (!ROLES.has(body.role)) errors.push("role must be scout, partnership or analyst");
   app.role = body.role;
   const desks = Array.isArray(body.desks) ? body.desks.filter(d => DESKS.includes(d)) : [];
   if (desks.length === 0) errors.push("at least one desk is required");
@@ -95,12 +95,14 @@ function shortMailError(detail) {
   return detail.slice(0, 120);
 }
 
+function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
 function mailHtml(app, claimUrl) {
-  const desk = app.desks.join(", ");
+  const desk = escapeHtml(app.desks.join(", "));
   return `<!doctype html><html><body style="margin:0;background:#060607;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:40px 28px;color:#f4efe2;">
     <p style="color:#e5be31;font-size:11px;letter-spacing:.22em;margin:0 0 18px;">IFAGRITHM · RESEARCH NETWORK</p>
-    <h1 style="font-size:26px;margin:0 0 16px;color:#ffffff;">You're in, ${app.full_name}.</h1>
+    <h1 style="font-size:26px;margin:0 0 16px;color:#ffffff;">You're in, ${escapeHtml(app.full_name)}.</h1>
     <p style="font-size:15px;line-height:1.6;color:#b9b5a6;margin:0 0 22px;">
       Congratulations — your application to the IFAGRITHM research network has been approved.
       You are joining as a <strong style="color:#e5be31;">${roleLabel(app.role)}</strong>
@@ -123,6 +125,7 @@ async function sendApprovalMail(app) {
   const claimUrl = `${CLAIM_BASE}/network?t=${app.claim_token}`;
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
+    signal: AbortSignal.timeout(10000),
     headers: { authorization: `Bearer ${RESEND_KEY}`, "content-type": "application/json" },
     body: JSON.stringify({
       from: RESEND_FROM,
@@ -142,7 +145,7 @@ function declineHtml(app) {
   return `<!doctype html><html><body style="margin:0;background:#060607;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:40px 28px;color:#f4efe2;">
     <p style="color:#e5be31;font-size:11px;letter-spacing:.22em;margin:0 0 18px;">IFAGRITHM · RESEARCH NETWORK</p>
-    <h1 style="font-size:24px;margin:0 0 16px;color:#ffffff;">Thanks for applying, ${app.full_name}.</h1>
+    <h1 style="font-size:24px;margin:0 0 16px;color:#ffffff;">Thanks for applying, ${escapeHtml(app.full_name)}.</h1>
     <p style="font-size:15px;line-height:1.6;color:#b9b5a6;margin:0 0 22px;">
       We read every application carefully. This time round we are not moving forward — the network is small
       and the fit has to be right for both sides. That can change: when we open new desks, you are welcome to apply again.
@@ -156,6 +159,7 @@ async function sendDeclineMail(app) {
   if (!RESEND_KEY) return { skipped: true };
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
+    signal: AbortSignal.timeout(10000),
     headers: { authorization: `Bearer ${RESEND_KEY}`, "content-type": "application/json" },
     body: JSON.stringify({
       from: RESEND_FROM,
@@ -171,11 +175,39 @@ async function sendDeclineMail(app) {
   return { skipped: false };
 }
 
+const limits = new Map();
+function rateLimited(req, path) {
+ const key = `${req.socket.remoteAddress}:${path}`, now = Date.now();
+ let entry = limits.get(key);
+ if (!entry || now > entry.until) entry = {count:0,until:now+60000};
+ entry.count++; limits.set(key,entry);
+ if(limits.size>10000) for(const [k,v] of limits) if(v.until<now) limits.delete(k);
+ return entry.count>60;
+}
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
   try {
+    if(req.method === "POST" && rateLimited(req,url.pathname))return send(res,429,{error:"Too many requests. Try again shortly."});
+    if (req.method === "POST" && url.pathname === "/enquiries") {
+      if (!authorized(req)) return send(res, 401, { error: "unauthorized" });
+      const body = await readJson(req);
+      const name = cleanText(body.name, 200), email = cleanText(body.email, 254);
+      const company = cleanText(body.company, 200), question = cleanText(body.question, 5000);
+      if (!name || !question || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return send(res, 400, { error: "Complete your name, email and question." });
+      const [row] = await sql`INSERT INTO enquiries (name,email,company,question) VALUES (${name},${email},${company},${question}) RETURNING id`;
+      let mail_error;
+      if (RESEND_KEY && process.env.ENQUIRY_NOTIFY_EMAIL) {
+        try { const notice = await fetch("https://api.resend.com/emails", {
+          method:"POST", signal:AbortSignal.timeout(10000), headers:{authorization:`Bearer ${RESEND_KEY}`,"content-type":"application/json"},
+          body:JSON.stringify({from:RESEND_FROM,to:[process.env.ENQUIRY_NOTIFY_EMAIL],reply_to:email,subject:"New IFAGRITHM project enquiry",text:`Name: ${name}\nEmail: ${email}\nCompany: ${company}\n\n${question}`})
+        }); if (!notice.ok) mail_error = "Notification failed; enquiry is saved.";
+        } catch { mail_error = "Notification failed; enquiry is saved."; }
+      }
+      return send(res, 201, {ok:true,id:row.id,mail_error});
+    }
     // public: submit an application
     if (req.method === "POST" && url.pathname === "/apply") {
+      if (!authorized(req)) return send(res, 401, {error:"unauthorized"});
       const body = await readJson(req);
       const { app, errors } = validateApplication(body);
       if (errors.length) return send(res, 400, { error: errors.join("; ") });
@@ -208,10 +240,14 @@ const server = http.createServer(async (req, res) => {
     // everything below needs the shared secret
     if (!authorized(req)) return send(res, 401, { error: "unauthorized" });
 
+    if (req.method === "GET" && url.pathname === "/enquiries") {
+      const rows = await sql`SELECT id,created_at,name,email,company,question FROM enquiries ORDER BY id DESC`;
+      return send(res, 200, {enquiries:rows});
+    }
     if (req.method === "GET" && url.pathname === "/applications") {
       const rows = await sql`
         SELECT id, created_at, full_name, x_handle, telegram, email, country, role, desks, links, context, why, status, tier, claim_token
-        FROM applications ORDER BY id DESC LIMIT 200`;
+        FROM applications ORDER BY id DESC`;
       return send(res, 200, { applications: rows.map(r => ({ ...r, serial: serialFor(r.id) })) });
     }
 

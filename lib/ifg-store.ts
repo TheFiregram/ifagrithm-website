@@ -38,7 +38,7 @@ export type StoreApplication = {
   serial: string;
 };
 
-async function call<T>(path: string, init?: { method?: string; body?: unknown }): Promise<{ status: number; data: T }> {
+async function call<T>(path: string, init?: { method?: "GET" | "POST"; body?: unknown }): Promise<{ status: number; data: T }> {
   const { statusCode, body } = await request(`${STORE_URL}${path}`, {
     method: init?.method ?? "GET",
     headers: {
@@ -47,6 +47,7 @@ async function call<T>(path: string, init?: { method?: string; body?: unknown })
     },
     body: init?.body === undefined ? undefined : JSON.stringify(init.body),
     dispatcher: storeAgent(),
+    headersTimeout: 10000, bodyTimeout: 10000,
   });
   const text = await body.text();
   let data: unknown = null;
@@ -79,3 +80,6 @@ export function rejectApplication(id: number) {
 export function resolveClaim(token: string) {
   return call<{ serial: string; name: string; x_handle?: string; role: string; desk: string; tier?: string; error?: string }>(`/claim/${token}`);
 }
+
+export function submitEnquiry(enquiry: Record<string, unknown>){return call<{ok?:boolean;id?:number;error?:string}>("/enquiries",{method:"POST",body:enquiry});}
+export function listEnquiries(){return call<{enquiries?:{id:number;created_at:string;name:string;email:string;company:string;question:string}[];error?:string}>("/enquiries");}

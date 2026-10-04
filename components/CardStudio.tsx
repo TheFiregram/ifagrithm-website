@@ -40,7 +40,7 @@ const SAMPLE: CardData = {
 };
 
 // demo photo lives in /public; production swaps this for the member's X photo
-const SAMPLE_AVATAR = "/sample-dp.jpg";
+const SAMPLE_AVATAR = null;
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -132,6 +132,7 @@ export default function CardStudio() {
           role: (ROLES as readonly string[]).includes(info.role) ? info.role as Role : d.role,
           desk: desk ?? d.desk,
           tier: tier ?? d.tier,
+          tagline: "", bio: "",
         }));
         setXHandle(info.x_handle ?? "");
         setAvatar(null); // their card, their photo — fetched next line
@@ -199,7 +200,7 @@ export default function CardStudio() {
 
   const download = useCallback(async () => {
     const node = cardRef.current;
-    if (!node || exporting) return;
+    if (!node || exporting || claimState !== "ok") return;
     setExporting(true);
     setExportNote(null);
     node.classList.add("is-export");
@@ -239,7 +240,7 @@ export default function CardStudio() {
       node.classList.remove("is-export");
       setExporting(false);
     }
-  }, [data.name, exporting]);
+  }, [data.name, exporting, claimState]);
 
   const xNote =
     xStatus === "loading" ? "Resolving avatar…" :
@@ -263,7 +264,7 @@ export default function CardStudio() {
             <span className="ifg-legend">Identity</span>
             <label className="ifg-field">
               <span>Full name</span>
-              <input value={data.name} maxLength={28} onChange={(e) => set("name", e.target.value)} />
+              <input value={data.name} maxLength={28} readOnly={claimState === "ok"} onChange={(e) => set("name", e.target.value)} />
             </label>
             <div className="ifg-field">
               <span>Pull photo from X</span>
@@ -293,7 +294,7 @@ export default function CardStudio() {
                   role="radio"
                   aria-checked={data.role === role}
                   className={data.role === role ? "on" : ""}
-                  onClick={() => set("role", role)}
+                  disabled={claimState === "ok"} onClick={() => set("role", role)}
                 >
                   {role}
                 </button>
@@ -317,7 +318,7 @@ export default function CardStudio() {
                   aria-checked={data.tier === tier}
                   data-tier={tier.toLowerCase()}
                   className={data.tier === tier ? "on" : ""}
-                  onClick={() => set("tier", tier)}
+                  disabled={claimState === "ok"} onClick={() => set("tier", tier)}
                 >
                   <i aria-hidden /> {tier}
                 </button>
@@ -346,13 +347,13 @@ export default function CardStudio() {
             </label>
           </div>
 
-          <button type="button" className="ifg-btn ifg-btn-quiet" onClick={() => { setData(SAMPLE); setAvatar(SAMPLE_AVATAR); setXHandle(""); }}>
+          <button type="button" className="ifg-btn ifg-btn-quiet" disabled={claimState === "ok"} onClick={() => { setData(SAMPLE); setAvatar(SAMPLE_AVATAR); setXHandle(""); }}>
             Reset to sample
           </button>
           <p className="ifg-panel-foot">
             {claimState === "ok" && claim
               ? `Verified member ${claim.serial}. Your details came from the approval — add your photo and make it yours.`
-              : "Sample data. Members open this screen from their approval mail, pre-filled with verified details."}
+              : "Preview only. Open your approval link to download your official card."}
           </p>
         </section>
 
@@ -385,9 +386,9 @@ export default function CardStudio() {
 
               <header className="ifg-badge" data-boot>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <span className="ifg-badge-logo"><img src="/ifagrithm-logo.png" alt="" /></span>
+                <span className="ifg-badge-logo"><img src="/assets/brand-symbol-transparent.png" alt="" /></span>
                 <span className="ifg-badge-name">IFAGRITHM</span>
-                <span className="ifg-badge-sub">RESEARCH&nbsp;NETWORK</span>
+                <span className="ifg-badge-sub">RESEARCH&nbsp;NETWORK</span>{claim && <span className="ifg-card-serial">{claim.serial}</span>}
               </header>
 
               <figure className="ifg-photo" data-boot>
@@ -397,7 +398,7 @@ export default function CardStudio() {
                 ) : (
                   <div className="ifg-monogram">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/ifagrithm-logo.png" alt="" aria-hidden="true" />
+                    <img src="/assets/brand-symbol-transparent.png" alt="" aria-hidden="true" />
                     <span>{initialsOf(data.name)}</span>
                   </div>
                 )}
@@ -421,7 +422,7 @@ export default function CardStudio() {
                 <span className="ifg-foot-line" aria-hidden="true" />
                 <span className="ifg-foot-plate">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/ifagrithm-logo.png" alt="" />
+                  <img src="/assets/brand-symbol-transparent.png" alt="" />
                 </span>
                 <span className="ifg-foot-line" aria-hidden="true" />
               </footer>
@@ -433,7 +434,7 @@ export default function CardStudio() {
               type="button"
               className="ifg-btn ifg-btn-gold"
               onClick={download}
-              disabled={exporting}
+              disabled={exporting || claimState !== "ok"}
             >
               {exporting ? "Rendering…" : "Download card · PNG"}
             </button>

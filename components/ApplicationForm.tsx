@@ -1,8 +1,7 @@
 "use client";
 
-// Join-the-network application. The form composes a structured mail to
-// IFAGRITHM (nothing is stored server-side — same constraint as the project
-// brief form). Approved applicants later receive a card-studio link.
+// Research network application, stored through the server API.
+// Copying the application provides a fallback if storage is unavailable.
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -92,13 +91,6 @@ export default function ApplicationForm() {
     items.forEach(item => io.observe(item));
     return () => io.disconnect();
   }, []);
-
-  // after a successful submit, walk them back to the site
-  useEffect(() => {
-    if (!submitted) return;
-    const t = setTimeout(() => { window.location.assign("/"); }, 9000);
-    return () => clearTimeout(t);
-  }, [submitted]);
 
   function applicationText(): string {
     return [
@@ -207,7 +199,7 @@ export default function ApplicationForm() {
         <section className="apply-hero">
           <div className="shell">
             <p className="eyebrow" data-reveal>JOIN THE NETWORK</p>
-            <h1 data-reveal>Investigate the frontier<br /><span>with us.</span></h1>
+            <h1 data-reveal>From curiosity to evidence<br /><span>with us.</span></h1>
             <p className="apply-intro" data-reveal>
               IFAGRITHM is a Web3 data &amp; research consultancy. We are building a network of
               Research Scouts and Research Analysts to work on investigations across consumer apps,
@@ -225,12 +217,12 @@ export default function ApplicationForm() {
                 <path d="M22 37.5 32 47.5 50 27" />
               </svg>
               <h2>Application received.</h2>
-              <p>We read every application and reply to each one. If it is a fit, you get an approval mail with your desk and a link to claim your card.</p>
-              <Link className="primary" href="/">Back to the site <Arrow diagonal /></Link>
-              <p className="apply-return-note">Taking you back to the site…</p>
+              <p>Your application is saved for review. Approved applicants receive a link to their member card.</p>
+              <Link className="button button-primary" href="/">Back to the site <Arrow diagonal /></Link>
+
             </div>
           ) : (
-            <form className="apply-form" onSubmit={submit} noValidate>
+            <form className="apply-form" onSubmit={submit} >
               <div className="apply-rail" aria-hidden="true"><i ref={railRef} /></div>
             {/* 01 — identity */}
             <fieldset className="apply-block" data-reveal>
@@ -259,13 +251,12 @@ export default function ApplicationForm() {
             {/* 02 — role */}
             <fieldset className="apply-block" data-reveal>
               <legend><i>02</i> Your role</legend>
-              <div className="apply-roles" role="radiogroup" aria-label="Role">
+              <div className="apply-roles" role="group" aria-label="Role">
                 {ROLES.map(role => (
                   <button
                     key={role.id}
                     type="button"
-                    role="radio"
-                    aria-checked={form.role === role.id}
+                    aria-pressed={form.role === role.id}
                     className={`apply-role${form.role === role.id ? " is-on" : ""}`}
                     onClick={() => set("role", role.id)}
                   >
@@ -304,10 +295,10 @@ export default function ApplicationForm() {
             </fieldset>
 
             <div className="apply-actions" data-reveal>
-              <button className="primary" type="submit" disabled={sending}>{sending ? "Sending…" : "Submit application"} <Arrow diagonal /></button>
+              <button className="button button-primary" type="submit" disabled={sending}>{sending ? "Sending…" : "Submit application"} <Arrow diagonal /></button>
               <button className="apply-copy" type="button" onClick={copyApplication}>Copy application <Arrow /></button>
             </div>
-            <p className="apply-helper" data-reveal>Goes straight to the review inbox — we reply to every application we receive.</p>
+            <p className="apply-helper" data-reveal>Your details are saved for review. We will contact you with a decision.</p>
             <p className={`apply-status${shaking ? " apply-shake" : ""}`} role="status" data-reveal>{status}</p>
             {copyFallback && (
               <label className="apply-fallback" htmlFor="ap-fallback">Your application to copy
