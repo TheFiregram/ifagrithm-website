@@ -607,7 +607,7 @@ body { position: relative; isolation: isolate; }
   0% { opacity: 0; transform: perspective(1200px) translateY(46px) rotateX(8deg) scale(.97); outline: 1px solid transparent; outline-offset: 4px; }
   45% { opacity: 1; }
   55% { outline: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 0px; }
-  100% { opacity: 1; transform: perspective(1200px) none; outline: 1px solid transparent; outline-offset: 8px; }
+  100% { opacity: 1; transform: perspective(1200px) translateX(0) rotateY(0deg) scale(1); outline: 1px solid transparent; outline-offset: 8px; }
 }
 @media (prefers-reduced-motion: reduce) {
   [data-reveal].arrive { opacity: 1; transform: none; animation: none; }
@@ -645,4 +645,23 @@ html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *
 }
 @media (prefers-reduced-motion: reduce) {
   .apply-success { animation: none; }
+}
+
+/* cascade arrival — the four service rows sweep in from the right,
+   each from deeper out, fanning leftward in reading order */
+[data-reveal].arrive-x {
+  opacity: 0;
+  transform: perspective(1200px) translateX(var(--from-x, 140px)) rotateY(-8deg) scale(.985);
+  transform-origin: 100% 50%;
+}
+[data-reveal].arrive-x.is-in { animation: arrive-right .95s var(--ease) both; }
+@keyframes arrive-right {
+  0% { opacity: 0; transform: perspective(1200px) translateX(var(--from-x, 140px)) rotateY(-8deg) scale(.985); outline: 1px solid transparent; outline-offset: 4px; }
+  45% { opacity: 1; }
+  55% { outline: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 0px; }
+  100% { opacity: 1; transform: perspective(1200px) translateX(0) rotateY(0deg) scale(1); outline: 1px solid transparent; outline-offset: 8px; }
+}
+.services { overflow-x: clip; }
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal].arrive-x { opacity: 1; transform: none; animation: none; }
 }

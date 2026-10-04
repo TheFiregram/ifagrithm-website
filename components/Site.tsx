@@ -424,7 +424,7 @@ export default function Site() {
       <section className="services section" id="services" aria-labelledby="services-title" data-reveal>
         <div className="shell">
           <div className="section-heading"><p className="eyebrow">WHAT WE DO</p><h2 id="services-title">Research built around<br />your next decision.</h2></div>
-          <div className="service-rows">{services.map((service, index) => <article className="service-row arrive" key={service.title} data-reveal style={{ transitionDelay: `${index * 90}ms` }}>
+          <div className="service-rows">{services.map((service, index) => <article className="service-row arrive-x" key={service.title} data-reveal style={{ transitionDelay: `${index * 110}ms`, "--from-x": `${120 + index * 60}px` } as React.CSSProperties}>
             <span className="service-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
             <div className="service-main"><h3>{service.title}</h3><p>{service.description}</p></div>
             <div className="service-side"><span className="micro-label">Typical outputs</span><ul>{service.outputs.map(output => <li key={output}>{output}</li>)}</ul></div>
