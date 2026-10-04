@@ -266,7 +266,7 @@
   inset: 0 auto auto 0;
   width: 1080px;
   height: 1350px;
-  transform: scale(var(--card-scale, 0.4));
+  transform: perspective(1400px) scale(var(--card-scale, 0.4)) rotateX(var(--tx, 0deg)) rotateY(var(--ty, 0deg));
   transform-origin: top left;
   background: #060607;
   overflow: hidden;

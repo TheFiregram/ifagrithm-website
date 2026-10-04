@@ -172,6 +172,31 @@ export default function CardStudio() {
     return () => ro.disconnect();
   }, []);
 
+  // subtle tilt while hovering the preview (desktop, motion-safe only)
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    if (!window.matchMedia("(pointer: fine)").matches) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const onMove = (event: PointerEvent) => {
+      const rect = shell.getBoundingClientRect();
+      const px = (event.clientX - rect.left) / rect.width - 0.5;
+      const py = (event.clientY - rect.top) / rect.height - 0.5;
+      shell.style.setProperty("--tx", `${(-py * 3).toFixed(2)}deg`);
+      shell.style.setProperty("--ty", `${(px * 3).toFixed(2)}deg`);
+    };
+    const onLeave = () => {
+      shell.style.setProperty("--tx", "0deg");
+      shell.style.setProperty("--ty", "0deg");
+    };
+    shell.addEventListener("pointermove", onMove);
+    shell.addEventListener("pointerleave", onLeave);
+    return () => {
+      shell.removeEventListener("pointermove", onMove);
+      shell.removeEventListener("pointerleave", onLeave);
+    };
+  }, []);
+
   const download = useCallback(async () => {
     const node = cardRef.current;
     if (!node || exporting) return;

@@ -43,8 +43,33 @@ export default function ApplicationForm() {
   const [status, setStatus] = useState("");
   const [sending, setSending] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [shaking, setShaking] = useState(false);
   const [copyFallback, setCopyFallback] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
+  const railRef = useRef<HTMLElement>(null);
+
+  // the rail fills as you move through the form
+  useEffect(() => {
+    const rail = railRef.current;
+    const form = rootRef.current?.querySelector("form");
+    if (!rail || !form) return;
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const rect = form.getBoundingClientRect();
+        const progress = Math.min(1, Math.max(0, (window.innerHeight * 0.55 - rect.top) / Math.max(rect.height, 1)));
+        rail.style.transform = `scaleX(${progress})`;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
 
   const set = <K extends keyof Application>(key: K, value: Application[K]) =>
     setForm(f => ({ ...f, [key]: value }));
@@ -111,7 +136,12 @@ export default function ApplicationForm() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const gap = missing();
-    if (gap) { setStatus(gap); return; }
+    if (gap) {
+      setStatus(gap);
+      setShaking(true);
+      setTimeout(() => setShaking(false), 550);
+      return;
+    }
     setSending(true);
     try {
       const res = await fetch("/api/apply", {
@@ -201,6 +231,7 @@ export default function ApplicationForm() {
             </div>
           ) : (
             <form className="apply-form" onSubmit={submit} noValidate>
+              <div className="apply-rail" aria-hidden="true"><i ref={railRef} /></div>
             {/* 01 — identity */}
             <fieldset className="apply-block" data-reveal>
               <legend><i>01</i> Your information</legend>
@@ -277,7 +308,7 @@ export default function ApplicationForm() {
               <button className="apply-copy" type="button" onClick={copyApplication}>Copy application <Arrow /></button>
             </div>
             <p className="apply-helper" data-reveal>Goes straight to the review inbox — we reply to every application we receive.</p>
-            <p className="apply-status" role="status" data-reveal>{status}</p>
+            <p className={`apply-status${shaking ? " apply-shake" : ""}`} role="status" data-reveal>{status}</p>
             {copyFallback && (
               <label className="apply-fallback" htmlFor="ap-fallback">Your application to copy
                 <textarea id="ap-fallback" readOnly value={copyFallback} rows={10} onFocus={e => e.currentTarget.select()} />

@@ -105,13 +105,18 @@ function Words({ text, base = 0 }: { text: string; base?: number }) {
   return <>{text.split(" ").map((word, index) => <span className="w" key={`${word}-${index}`} style={{ animationDelay: `${base + index * 0.07}s` }}>{word}</span>)}</>;
 }
 
+// scroll-reveal headline words (data-reveal="words" staggers them in)
+function RW({ text, start = 0 }: { text: string; start?: number }) {
+  return <>{text.split(" ").map((word, index) => <span className="rw" key={`${word}-${index}`} style={{ "--i": start + index } as React.CSSProperties}>{word}</span>)}{" "}</>;
+}
+
 function ResearchMap() {
-  return <figure className="research-map" aria-labelledby="map-caption">
+  return <figure className="research-map" data-reveal aria-labelledby="map-caption">
     <figcaption id="map-caption"><span className="map-title">Illustrative research map</span><span className="map-label">CONCEPTUAL ILLUSTRATION</span></figcaption>
     <div className="map-canvas">
       <svg className="map-connections" viewBox="0 0 480 390" preserveAspectRatio="none" fill="none" aria-hidden="true">
-        <path d="M240 100v30H110v28M211 200h58M368 254v36H240v18" stroke="currentColor" strokeWidth="1.4" />
-        <path d="m106 150 4 8 4-8M261 196l8 4-8 4M236 300l4 8 4-8" stroke="currentColor" strokeWidth="1.4" />
+        <path pathLength={100} d="M240 100v30H110v28M211 200h58M368 254v36H240v18" stroke="currentColor" strokeWidth="1.4" />
+        <path pathLength={100} d="m106 150 4 8 4-8M261 196l8 4-8 4M236 300l4 8 4-8" stroke="currentColor" strokeWidth="1.4" />
         <circle className="flow-spark" r="3"><animateMotion dur="5.2s" repeatCount="indefinite" path="M240 100v30H110v28" /></circle>
         <circle className="flow-spark" r="2.6"><animateMotion dur="2.2s" repeatCount="indefinite" path="M211 200h58" /></circle>
         <circle className="flow-spark" r="3"><animateMotion dur="5.2s" begin="-2.6s" repeatCount="indefinite" path="M368 254v36H240v18" /></circle>
@@ -186,6 +191,9 @@ export default function Site() {
   const [brief, setBrief] = useState({ name: "", email: "", company: "", question: "" });
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const menuButton = useRef<HTMLButtonElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const dotRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setTheme(document.documentElement.dataset.theme === "light" ? "light" : "dark");
@@ -218,6 +226,94 @@ export default function Site() {
     return () => io.disconnect();
   }, []);
 
+  // ultra motion: scroll progress, cursor layer, row spotlight, magnetic CTAs
+  useEffect(() => {
+    const fine = window.matchMedia("(pointer: fine)").matches;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // gold scroll progress
+    const bar = progressRef.current;
+    let progressRaf = 0;
+    const onScroll = () => {
+      if (progressRaf || !bar) return;
+      progressRaf = requestAnimationFrame(() => {
+        progressRaf = 0;
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        bar.style.transform = `scaleX(${max > 0 ? Math.min(1, window.scrollY / max) : 0})`;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+
+    const cleanups: (() => void)[] = [];
+
+    if (fine && !reduced) {
+      // services spotlight follows the cursor
+      const spotRows = Array.from(document.querySelectorAll<HTMLElement>(".service-row"));
+      const onSpot = (event: PointerEvent) => {
+        const row = event.currentTarget as HTMLElement;
+        const rect = row.getBoundingClientRect();
+        row.style.setProperty("--mx", `${event.clientX - rect.left}px`);
+        row.style.setProperty("--my", `${event.clientY - rect.top}px`);
+      };
+      spotRows.forEach(row => row.addEventListener("pointermove", onSpot));
+      cleanups.push(() => spotRows.forEach(row => row.removeEventListener("pointermove", onSpot)));
+
+      // CTAs lean toward the cursor
+      const magnetButtons = Array.from(document.querySelectorAll<HTMLElement>(".primary"));
+      const onMagnet = (event: PointerEvent) => {
+        const btn = event.currentTarget as HTMLElement;
+        const rect = btn.getBoundingClientRect();
+        const dx = event.clientX - (rect.left + rect.width / 2);
+        const dy = event.clientY - (rect.top + rect.height / 2);
+        btn.style.transform = `translate(${Math.max(-8, Math.min(8, dx * 0.14))}px, ${Math.max(-6, Math.min(6, dy * 0.3))}px)`;
+      };
+      const onLeave = (event: PointerEvent) => { (event.currentTarget as HTMLElement).style.transform = ""; };
+      magnetButtons.forEach(btn => {
+        btn.addEventListener("pointermove", onMagnet);
+        btn.addEventListener("pointerleave", onLeave);
+      });
+      cleanups.push(() => magnetButtons.forEach(btn => {
+        btn.removeEventListener("pointermove", onMagnet);
+        btn.removeEventListener("pointerleave", onLeave);
+      }));
+
+      // gold cursor: instant dot, trailing ring that grows over interactive elements
+      const dot = dotRef.current;
+      const ring = ringRef.current;
+      if (dot && ring) {
+        document.documentElement.classList.add("has-cursor");
+        let x = window.innerWidth / 2, y = window.innerHeight / 2, ringX = x, ringY = y, cursorRaf = 0, active = false;
+        const onMove = (event: PointerEvent) => {
+          x = event.clientX; y = event.clientY;
+          dot.style.transform = `translate(${x}px, ${y}px)`;
+          const hit = (event.target as Element | null)?.closest?.("a, button, summary, .service-row, .map-node");
+          const now = Boolean(hit);
+          if (now !== active) { active = now; ring.classList.toggle("is-active", now); }
+        };
+        const loop = () => {
+          ringX += (x - ringX) * 0.16;
+          ringY += (y - ringY) * 0.16;
+          ring.style.transform = `translate(${ringX}px, ${ringY}px)`;
+          cursorRaf = requestAnimationFrame(loop);
+        };
+        window.addEventListener("pointermove", onMove, { passive: true });
+        cursorRaf = requestAnimationFrame(loop);
+        cleanups.push(() => {
+          document.documentElement.classList.remove("has-cursor");
+          window.removeEventListener("pointermove", onMove);
+          cancelAnimationFrame(cursorRaf);
+        });
+      }
+    }
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (progressRaf) cancelAnimationFrame(progressRaf);
+      cleanups.forEach(fn => fn());
+    };
+  }, []);
+
   function briefText() {
     return `IFAGRITHM PROJECT BRIEF\n\nName: ${brief.name.trim()}\nWork email: ${brief.email.trim()}\nCompany: ${brief.company.trim() || "Not provided"}\n\nWhat would you like us to investigate?\n${brief.question.trim()}`;
   }
@@ -247,6 +343,9 @@ export default function Site() {
   }
 
   return <>
+    <div className="scroll-progress" ref={progressRef} aria-hidden="true" />
+    <div className="cursor-dot" ref={dotRef} aria-hidden="true" />
+    <div className="cursor-ring" ref={ringRef} aria-hidden="true" />
     <a className="skip-link" href="#main">Skip to content</a>
     <header className="site-header" id="top">
       <div className="shell header-inner">
@@ -279,7 +378,7 @@ export default function Site() {
           <div className="hero-copy">
             <p className="chip-row rise" style={{ animationDelay: ".1s" }}>{heroChips.map(chip => <span className="chip" key={chip}>{chip}</span>)}</p>
             <h1 id="hero-title" aria-label="Understand your users. Find where growth can come from.">
-              <span className="line" aria-hidden="true"><Words text="Understand your users." base={0.25} /></span>
+              <span className="line" aria-hidden="true"><Words text="Understand your" base={0.25} />{" "}<span className="word-cycle"><span className="word-cycle-track"><b>users.</b><b>market.</b><b>growth.</b><b>next move.</b><b>users.</b></span></span></span>
               <span className="line gold" aria-hidden="true"><Words text="Find where growth can come from." base={0.55} /></span>
             </h1>
             <p className="hero-body rise" style={{ animationDelay: "1.05s" }}>IFAGRITHM helps Web3 teams understand what their users do, identify meaningful behavioural segments, and investigate where similar users already are.</p>
@@ -289,6 +388,7 @@ export default function Site() {
             </div>
           </div>
         </div>
+        <div className="scroll-hint" aria-hidden="true"><span className="scroll-mouse"><i /></span>Scroll</div>
       </section>
 
       <div className="ticker" aria-hidden="true">
@@ -320,11 +420,11 @@ export default function Site() {
         </div>
       </section>
 
-      <section className="mapband section" aria-labelledby="mapband-title" data-reveal>
+      <section className="mapband section" aria-labelledby="mapband-title" data-reveal="words">
         <div className="shell mapband-grid">
-          <div className="mapband-copy">
+          <div className="mapband-copy" data-reveal>
             <p className="eyebrow">THE SHAPE OF A BRIEF</p>
-            <h2 id="mapband-title">From product activity<br />to acquisition.</h2>
+            <h2 id="mapband-title">{RW({ text: "From product activity" })}<br />{RW({ text: "to acquisition.", start: 3 })}</h2>
             <p>Every brief follows the same spine: observe what is happening, understand who it is happening with, investigate where similar people already are, then explore the routes worth testing.</p>
             <p>The steps flex to the question. Some briefs live entirely in the first two stages, others run the full route through to acquisition hypotheses and the measurement that follows.</p>
           </div>
@@ -349,24 +449,24 @@ export default function Site() {
         </div>
       </section>
 
-      <section className="faq section" id="faq" aria-labelledby="faq-title" data-reveal>
+      <section className="faq section" id="faq" aria-labelledby="faq-title" data-reveal="words">
         <div className="shell faq-grid">
-          <div className="faq-copy">
+          <div className="faq-copy" data-reveal>
             <p className="eyebrow">COMMON QUESTIONS</p>
-            <h2 id="faq-title">Straight answers,<br />before you ask.</h2>
+            <h2 id="faq-title">{RW({ text: "Straight answers," })}<br />{RW({ text: "before you ask.", start: 2 })}</h2>
             <p className="faq-more">Something else on your mind? <a href="#contact">Tell us what you are trying to understand</a>.</p>
           </div>
-          <div className="faq-list">{faq.map(item => <details className="faq-item" key={item.q}>
+          <div className="faq-list" data-reveal>{faq.map(item => <details className="faq-item" key={item.q}>
             <summary>{item.q}<span className="faq-icon" aria-hidden="true" /></summary>
-            <p>{item.a}</p>
+            <div className="faq-body"><p>{item.a}</p></div>
           </details>)}</div>
         </div>
       </section>
 
-      <section className="contact section" id="contact" aria-labelledby="contact-title" data-reveal>
+      <section className="contact section" id="contact" aria-labelledby="contact-title" data-reveal="words">
         <div className="shell contact-grid">
-          <div className="contact-copy"><p className="eyebrow">START A PROJECT</p><h2 id="contact-title">What are you trying to understand?</h2><p>Tell us about your product and the decision you are working through.</p><a className="email-link" href={`mailto:${EMAIL}`}>{EMAIL} <Arrow diagonal /></a><div className="social-links"><a href={X_URL} target="_blank" rel="noopener noreferrer">X / @ifagrithm <Arrow diagonal /></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow diagonal /></a></div></div>
-          <form className="brief-form" onSubmit={submit}>
+          <div className="contact-copy" data-reveal><p className="eyebrow">START A PROJECT</p><h2 id="contact-title">{RW({ text: "What are you trying to understand?" })}</h2><p>Tell us about your product and the decision you are working through.</p><a className="email-link" href={`mailto:${EMAIL}`}>{EMAIL} <Arrow diagonal /></a><div className="social-links"><a href={X_URL} target="_blank" rel="noopener noreferrer">X / @ifagrithm <Arrow diagonal /></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow diagonal /></a></div></div>
+          <form className="brief-form" onSubmit={submit} data-reveal>
             <div className="form-row"><label htmlFor="brief-name">Name <span aria-hidden="true">*</span><input id="brief-name" name="name" required autoComplete="name" maxLength={200} value={brief.name} onChange={event => setBrief({ ...brief, name: event.target.value })} /></label><label htmlFor="brief-email">Work email <span aria-hidden="true">*</span><input id="brief-email" name="email" required type="email" autoComplete="email" maxLength={254} value={brief.email} onChange={event => setBrief({ ...brief, email: event.target.value })} /></label></div>
             <label htmlFor="brief-company">Company <span className="optional">(optional)</span><input id="brief-company" name="company" autoComplete="organization" maxLength={200} value={brief.company} onChange={event => setBrief({ ...brief, company: event.target.value })} /></label>
             <label htmlFor="brief-question">What would you like us to investigate? <span aria-hidden="true">*</span><textarea id="brief-question" name="question" required maxLength={4000} rows={5} value={brief.question} onChange={event => setBrief({ ...brief, question: event.target.value })} /></label>
@@ -379,6 +479,6 @@ export default function Site() {
       </section>
     </main>
 
-    <footer className="site-footer"><div className="shell footer-inner"><div><Brand /><p>Web3 research. Clearer decisions.</p></div><nav aria-label="Footer navigation"><a href="#services">Services</a><a href="#faq">FAQ</a><a href="#contact">Contact</a><a href="/application">Join the network</a><a href={X_URL} target="_blank" rel="noopener noreferrer">X <Arrow diagonal /></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow diagonal /></a></nav><small>© {new Date().getFullYear()} IFAGRITHM</small></div><div className="footer-ghost" aria-hidden="true">IFAGRITHM</div></footer>
+    <footer className="site-footer" data-reveal="ghost"><div className="shell footer-inner"><div><Brand /><p>Web3 research. Clearer decisions.</p></div><nav aria-label="Footer navigation"><a href="#services">Services</a><a href="#faq">FAQ</a><a href="#contact">Contact</a><a href="/application">Join the network</a><a href={X_URL} target="_blank" rel="noopener noreferrer">X <Arrow diagonal /></a><a href={LINKEDIN_URL} target="_blank" rel="noopener noreferrer">LinkedIn <Arrow diagonal /></a></nav><small>© {new Date().getFullYear()} IFAGRITHM</small></div><div className="footer-ghost" aria-hidden="true">IFAGRITHM</div></footer>
   </>;
 }
