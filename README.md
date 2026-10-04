@@ -17,7 +17,7 @@ npm run build
 
 The static website is exported to `out/`. Vercel uses the included configuration. The main branch is the production source.
 
-The page follows the layout and motion of https://striker.alphaai.markets/ using Ifagrithm's branding and research content.
+
 
 It includes a 1 second brand entrance, 1 second hold, and 1.5 second circular exit; a rotating headline and animated dot field; five pinned feature panels with upright orbit labels, evidence flows, moving research cards, an animated ruler, and a connected signal field; a three-stage research process; rolling counters; an accessible FAQ; a moving closing card wall; and an animated character footer.
 
