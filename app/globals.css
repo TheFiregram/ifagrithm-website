@@ -503,3 +503,94 @@ html.has-cursor .cursor-dot, html.has-cursor .cursor-ring { display: block; opac
   .apply-rail { display: none; }
   .apply-shake { animation: none; }
 }
+
+/* ============================================================
+   Brand boot screen — logo, wordmark, tagline, progress line,
+   then the curtain wipes up into the hero entrance.
+   ============================================================ */
+.preloader {
+  position: fixed; inset: 0; z-index: 200;
+  background: #050506;
+  display: flex; align-items: center; justify-content: center;
+  clip-path: inset(0 0 0 0);
+}
+.preloader.is-leaving { animation: pre-out .8s cubic-bezier(.7, 0, .2, 1) .15s forwards; }
+@keyframes pre-out { to { clip-path: inset(0 0 100% 0); } }
+
+.pre-core { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.pre-logo { width: 92px; height: 92px; border-radius: 50%; background: #000; overflow: hidden; position: relative; animation: pre-pop .9s var(--ease) both; }
+.pre-logo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.pre-logo::after { content: ""; position: absolute; inset: -40%; background: conic-gradient(from 0deg, transparent 0deg, color-mix(in srgb, var(--accent) 35%, transparent) 40deg, transparent 80deg); animation: pre-orbit 1.4s linear infinite; }
+@keyframes pre-pop { from { opacity: 0; transform: scale(.7); } to { opacity: 1; transform: scale(1); } }
+@keyframes pre-orbit { to { transform: rotate(1turn); } }
+
+.pre-word { display: flex; gap: .04em; font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif; font-size: clamp(30px, 6vw, 52px); font-weight: 700; letter-spacing: .08em; color: #f4f1e6; line-height: 1; }
+.pre-word b { font-weight: inherit; opacity: 0; transform: translateY(14px); animation: pre-letter .5s var(--ease) forwards; animation-delay: calc(.45s + var(--i, 0) * 55ms); }
+@keyframes pre-letter { to { opacity: 1; transform: none; } }
+
+.pre-tag { font-family: var(--font-mono), monospace; font-size: 11px; color: color-mix(in srgb, var(--accent) 75%, #f4f1e6); letter-spacing: .5em; opacity: 0; animation: pre-track 1s var(--ease) 1.15s forwards; white-space: nowrap; }
+@keyframes pre-track { from { letter-spacing: .5em; opacity: 0; } to { letter-spacing: .3em; opacity: .95; } }
+
+.pre-line { width: min(300px, 62vw); height: 2px; background: color-mix(in srgb, #f4f1e6 8%, transparent); border-radius: 2px; overflow: hidden; }
+.pre-line i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #fff0bd); transform: scaleX(0); transform-origin: 0 50%; animation: pre-fill 2.35s var(--ease) .2s forwards; }
+@keyframes pre-fill { to { transform: scaleX(1); } }
+
+.pre-corner { position: absolute; font-family: var(--font-mono), monospace; font-size: 10px; letter-spacing: .3em; color: color-mix(in srgb, #f4f1e6 26%, transparent); }
+.pre-corner.tl { top: 26px; left: 30px; }
+.pre-corner.br { bottom: 26px; right: 30px; }
+
+/* hold the site's own entrance until the curtain lifts */
+html.booting h1 .w, html.booting .rise, html.booting .chip, html.booting .scroll-hint { animation-play-state: paused; }
+
+/* ambient gold dust — two slow counter-drifting fields behind everything */
+body { position: relative; isolation: isolate; }
+.ambient-a, .ambient-b {
+  position: fixed; inset: -60%; z-index: -1; pointer-events: none;
+  background-image: radial-gradient(color-mix(in srgb, var(--accent) 13%, transparent) 1px, transparent 1.5px);
+  background-size: 52px 52px;
+  animation: ambient-drift 70s linear infinite;
+  opacity: .55;
+}
+.ambient-b { background-size: 110px 110px; opacity: .3; animation-duration: 120s; animation-direction: reverse; }
+@keyframes ambient-drift { to { transform: translate(52px, 52px); } }
+
+/* hero HUD: corners + watermark + eyebrow ticks */
+.hero-hud { position: absolute; inset: 0; z-index: 3; pointer-events: none; font-family: var(--font-mono), monospace; font-size: 10px; letter-spacing: .28em; color: color-mix(in srgb, var(--muted) 62%, transparent); text-transform: uppercase; }
+.hero-hud span { position: absolute; }
+.hero-hud .hud-tl { top: 96px; left: 30px; }
+.hero-hud .hud-tr { top: 96px; right: 30px; }
+.hero-hud .hud-bl { bottom: 96px; left: 30px; }
+.hero-watermark {
+  position: absolute; z-index: 1; left: 50%; bottom: -1.5vw; transform: translateX(-50%);
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(90px, 15vw, 230px); font-weight: 700; line-height: .8; letter-spacing: -.02em;
+  color: transparent; -webkit-text-stroke: 1px color-mix(in srgb, var(--accent) 9%, transparent);
+  pointer-events: none; user-select: none; white-space: nowrap;
+}
+
+/* second marquee: sectors, counter-direction */
+.ticker-reverse .ticker-track { animation: ticker-slide 56s linear infinite reverse; }
+.ticker-reverse .ticker-item { color: color-mix(in srgb, var(--muted) 75%, var(--text)); }
+.ticker-reverse .ticker-mark { font-size: 9px; opacity: .7; }
+
+/* footer ghost shine */
+.footer-ghost { position: relative; overflow: hidden; }
+.footer-ghost::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(105deg, transparent 42%, color-mix(in srgb, var(--accent) 14%, transparent) 50%, transparent 58%);
+  transform: translateX(-160%); animation: ghost-shine 7s ease-in-out infinite;
+}
+@keyframes ghost-shine { 0%, 55% { transform: translateX(-160%); } 75%, 100% { transform: translateX(160%); } }
+
+@media (max-width: 860px) {
+  .hero-hud { display: none; }
+  .pre-corner { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .preloader { display: none; }
+  .pre-logo, .pre-word b, .pre-tag, .pre-line i { animation: none; opacity: 1; transform: none; }
+  html.booting h1 .w, html.booting .rise, html.booting .chip, html.booting .scroll-hint { animation-play-state: running; }
+  .ambient-a, .ambient-b { animation: none; }
+  .hero-watermark { opacity: .5; }
+  .footer-ghost::after { animation: none; display: none; }
+}

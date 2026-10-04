@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import HeroScene from "./HeroScene";
+import Preloader from "./Preloader";
 
 const X_URL = "https://x.com/ifagrithm?s=11";
 const LINKEDIN_URL = "https://www.linkedin.com/company/ifagrithm/";
@@ -343,6 +344,9 @@ export default function Site() {
   }
 
   return <>
+    <Preloader />
+    <div className="ambient-a" aria-hidden="true" />
+    <div className="ambient-b" aria-hidden="true" />
     <div className="scroll-progress" ref={progressRef} aria-hidden="true" />
     <div className="cursor-dot" ref={dotRef} aria-hidden="true" />
     <div className="cursor-ring" ref={ringRef} aria-hidden="true" />
@@ -373,7 +377,13 @@ export default function Site() {
     <main id="main">
       <section className="hero" aria-labelledby="hero-title">
         <HeroScene variant={0} />
+        <span className="hero-watermark" aria-hidden="true">IFAGRITHM</span>
         <div className="hero-vignette" aria-hidden="true" />
+        <div className="hero-hud" aria-hidden="true">
+          <span className="hud-tl">IFG — 01</span>
+          <span className="hud-tr">EST. MMXXVI</span>
+          <span className="hud-bl">OBSERVE · UNDERSTAND · INVESTIGATE · EXPLORE</span>
+        </div>
         <div className="shell hero-inner">
           <div className="hero-copy">
             <p className="chip-row rise" style={{ animationDelay: ".1s" }}>{heroChips.map(chip => <span className="chip" key={chip}>{chip}</span>)}</p>
@@ -393,6 +403,10 @@ export default function Site() {
 
       <div className="ticker" aria-hidden="true">
         <div className="ticker-track">{[...tickerItems, ...tickerItems].map((item, index) => <span className="ticker-item" key={`${item}-${index}`}><span className="ticker-mark">✦</span>{item}</span>)}</div>
+      </div>
+
+      <div className="ticker ticker-reverse" aria-hidden="true">
+        <div className="ticker-track">{[...sectors, ...sectors].map((sector, index) => <span className="ticker-item" key={`${sector}-${index}`}><span className="ticker-mark">◆</span>{sector}</span>)}</div>
       </div>
 
       <section className="services section" id="services" aria-labelledby="services-title" data-reveal>
