@@ -7,8 +7,8 @@
 
 import { useEffect, useState } from "react";
 
-const BOOT_MS = 2600;
-const EXIT_MS = 800;
+const BOOT_MS = 1800;
+const EXIT_MS = 650;
 
 export default function Preloader() {
   const [leaving, setLeaving] = useState(false);

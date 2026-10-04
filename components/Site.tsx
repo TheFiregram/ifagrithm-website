@@ -221,7 +221,13 @@ export default function Site() {
     const items = Array.from(document.querySelectorAll("[data-reveal]"));
     if (!items.length) return;
     const io = new IntersectionObserver(entries => {
-      for (const entry of entries) if (entry.isIntersecting) { entry.target.classList.add("is-in"); io.unobserve(entry.target); }
+      for (const entry of entries) if (entry.isIntersecting) {
+        const el = entry.target as HTMLElement;
+        // stagger arrives via animation-delay when an element declares transition-delay
+        if (el.style.transitionDelay) el.style.animationDelay = el.style.transitionDelay;
+        el.classList.add("is-in");
+        io.unobserve(el);
+      }
     }, { threshold: 0.1 });
     items.forEach(item => io.observe(item));
     return () => io.disconnect();
@@ -412,7 +418,7 @@ export default function Site() {
       <section className="services section" id="services" aria-labelledby="services-title" data-reveal>
         <div className="shell">
           <div className="section-heading"><p className="eyebrow">WHAT WE DO</p><h2 id="services-title">Research built around<br />your next decision.</h2></div>
-          <div className="service-rows">{services.map((service, index) => <article className="service-row" key={service.title} data-reveal style={{ transitionDelay: `${index * 90}ms` }}>
+          <div className="service-rows">{services.map((service, index) => <article className="service-row arrive" key={service.title} data-reveal style={{ transitionDelay: `${index * 90}ms` }}>
             <span className="service-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
             <div className="service-main"><h3>{service.title}</h3><p>{service.description}</p></div>
             <div className="service-side"><span className="micro-label">Typical outputs</span><ul>{service.outputs.map(output => <li key={output}>{output}</li>)}</ul></div>
@@ -426,7 +432,7 @@ export default function Site() {
           <p className="eyebrow">WHAT GOES INTO THE RESEARCH</p>
           <h2 id="evidence-title">Three kinds of evidence.<br />One clear answer.</h2>
           <p className="section-sub">Every brief draws on a different mix of these, chosen for the decision in front of you. Individually each one says something; together they say something you can bet on.</p>
-          <div className="evidence-grid">{evidence.map((item, index) => <article className="evidence-card" key={item.title} data-reveal style={{ transitionDelay: `${200 + index * 110}ms` }}>
+          <div className="evidence-grid">{evidence.map((item, index) => <article className="evidence-card arrive" key={item.title} data-reveal style={{ transitionDelay: `${200 + index * 110}ms` }}>
             <EvidenceViz kind={item.viz} />
             <h3>{item.title}</h3>
             <p>{item.text}</p>
@@ -452,7 +458,7 @@ export default function Site() {
           <p className="eyebrow">HOW WE WORK</p>
           <h2 id="approach-title">A clear question. <span>Evidence you can inspect.</span> A useful next step.</h2>
           <p className="section-sub">Nothing in the process exists for its own sake. Each step ends with something you can read, question and use, and the brief is written for the people who have to make the call.</p>
-          <ol className="approach-steps">{approach.map(([title, description], index) => <li key={title} data-reveal style={{ transitionDelay: `${200 + index * 120}ms` }}><span className="step-index">{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{description}</p></li>)}</ol>
+          <ol className="approach-steps">{approach.map(([title, description], index) => <li className="arrive" key={title} data-reveal style={{ transitionDelay: `${200 + index * 120}ms` }}><span className="step-index">{String(index + 1).padStart(2, "0")}</span><h3>{title}</h3><p>{description}</p></li>)}</ol>
         </div>
       </section>
 

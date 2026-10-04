@@ -525,14 +525,14 @@ html.has-cursor .cursor-dot, html.has-cursor .cursor-ring { display: block; opac
 @keyframes pre-orbit { to { transform: rotate(1turn); } }
 
 .pre-word { display: flex; gap: .04em; font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif; font-size: clamp(30px, 6vw, 52px); font-weight: 700; letter-spacing: .08em; color: #f4f1e6; line-height: 1; }
-.pre-word b { font-weight: inherit; opacity: 0; transform: translateY(14px); animation: pre-letter .5s var(--ease) forwards; animation-delay: calc(.45s + var(--i, 0) * 55ms); }
+.pre-word b { font-weight: inherit; opacity: 0; transform: translateY(14px); animation: pre-letter .5s var(--ease) forwards; animation-delay: calc(.3s + var(--i, 0) * 45ms); }
 @keyframes pre-letter { to { opacity: 1; transform: none; } }
 
-.pre-tag { font-family: var(--font-mono), monospace; font-size: 11px; color: color-mix(in srgb, var(--accent) 75%, #f4f1e6); letter-spacing: .5em; opacity: 0; animation: pre-track 1s var(--ease) 1.15s forwards; white-space: nowrap; }
+.pre-tag { font-family: var(--font-mono), monospace; font-size: 11px; color: color-mix(in srgb, var(--accent) 75%, #f4f1e6); letter-spacing: .5em; opacity: 0; animation: pre-track .8s var(--ease) .8s forwards; white-space: nowrap; }
 @keyframes pre-track { from { letter-spacing: .5em; opacity: 0; } to { letter-spacing: .3em; opacity: .95; } }
 
 .pre-line { width: min(300px, 62vw); height: 2px; background: color-mix(in srgb, #f4f1e6 8%, transparent); border-radius: 2px; overflow: hidden; }
-.pre-line i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #fff0bd); transform: scaleX(0); transform-origin: 0 50%; animation: pre-fill 2.35s var(--ease) .2s forwards; }
+.pre-line i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), #fff0bd); transform: scaleX(0); transform-origin: 0 50%; animation: pre-fill 1.55s var(--ease) .2s forwards; }
 @keyframes pre-fill { to { transform: scaleX(1); } }
 
 .pre-corner { position: absolute; font-family: var(--font-mono), monospace; font-size: 10px; letter-spacing: .3em; color: color-mix(in srgb, #f4f1e6 26%, transparent); }
@@ -593,4 +593,22 @@ body { position: relative; isolation: isolate; }
   .ambient-a, .ambient-b { animation: none; }
   .hero-watermark { opacity: .5; }
   .footer-ghost::after { animation: none; display: none; }
+}
+
+/* dossier arrival — cards are dealt forward, settle, and a gold outline
+   flashes and expands off the edge. One language for every card type. */
+[data-reveal].arrive {
+  opacity: 0;
+  transform: perspective(1200px) translateY(46px) rotateX(8deg) scale(.97);
+  transform-origin: 50% 100%;
+}
+[data-reveal].arrive.is-in { animation: arrive-land .95s var(--ease) both; }
+@keyframes arrive-land {
+  0% { opacity: 0; transform: perspective(1200px) translateY(46px) rotateX(8deg) scale(.97); outline: 1px solid transparent; outline-offset: 4px; }
+  45% { opacity: 1; }
+  55% { outline: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 0px; }
+  100% { opacity: 1; transform: perspective(1200px) none; outline: 1px solid transparent; outline-offset: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal].arrive { opacity: 1; transform: none; animation: none; }
 }
