@@ -1,25 +1,14 @@
-import { NextResponse } from "next/server";
 import { sessionValid } from "@/lib/admin-auth";
 import { rejectApplication } from "@/lib/ifg-store";
+import { errorResponse, jsonResponse, readJsonObject } from "@/lib/http";
+import { validId } from "@/remote/validation.js";
 
 export async function POST(request: Request) {
-  if (!(await sessionValid())) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-  let body: { id?: number };
+  if (!(await sessionValid())) return jsonResponse({ error: "unauthorized" }, 401);
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "invalid body" }, { status: 400 });
-  }
-  const id = Number(body.id);
-  if (!Number.isInteger(id) || id <= 0) {
-    return NextResponse.json({ error: "id is required" }, { status: 400 });
-  }
-  try {
-    const { status, data } = await rejectApplication(id);
-    return NextResponse.json(data, { status });
-  } catch {
-    return NextResponse.json({ error: "store unreachable" }, { status: 503 });
-  }
+    const body = await readJsonObject(request, 2048);
+    if (!validId(body.id)) return jsonResponse({ error: "id is required" }, 400);
+    const { status, data } = await rejectApplication(body.id);
+    return jsonResponse(data, status);
+  } catch (error) { return errorResponse(error, "store unreachable"); }
 }

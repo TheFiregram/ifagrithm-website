@@ -9,4 +9,5 @@ for (let i = 0; i < incoming.length; i++) {
 }
 const child = spawn(process.execPath, [require.resolve("next/dist/bin/next"), ...args], { stdio: "inherit", env: process.env });
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));
-child.on("exit", code => process.exit(code || 0));
+child.on("error", error => { console.error("Dev server failed:", error.message); process.exitCode = 1; });
+child.on("exit", (code, signal) => process.exit(code ?? (signal === "SIGINT" ? 130 : 143)));

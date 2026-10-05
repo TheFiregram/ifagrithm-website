@@ -3,6 +3,7 @@
 # IFAGRITHM network store. Vercel functions pin the CA, so they get verified
 # TLS against the raw IP — no domain, no DNS, no firewall changes.
 set -euo pipefail
+umask 077
 
 mkdir -p /etc/nginx/ifg
 cd /etc/nginx/ifg
@@ -17,8 +18,8 @@ if [ ! -f ifg-server.crt ]; then
   printf "subjectAltName=IP:217.77.4.143\n" > ifg-server.ext
   openssl x509 -req -in ifg-server.csr -CA ifg-ca.crt -CAkey ifg-ca.key \
     -CAcreateserial -out ifg-server.crt -days 1825 -extfile ifg-server.ext >/dev/null 2>&1
-  chmod 600 ifg-ca.key ifg-server.key
 fi
+chmod 600 ifg-ca.key ifg-server.key
 
 cat > /etc/nginx/sites-available/ifg-network <<'NGINX'
 # IFAGRITHM network store — default_server on 443 catches IP + unknown-SNI
@@ -30,7 +31,8 @@ server {
 
   ssl_certificate /etc/nginx/ifg/ifg-server.crt;
   ssl_certificate_key /etc/nginx/ifg/ifg-server.key;
-  client_max_body_size 64k;
+  client_max_body_size 32k;
+  client_body_timeout 10s;
 
   location / {
     proxy_pass http://127.0.0.1:4100;
@@ -38,6 +40,7 @@ server {
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
     proxy_read_timeout 15s;
+    proxy_send_timeout 15s;
   }
 }
 NGINX

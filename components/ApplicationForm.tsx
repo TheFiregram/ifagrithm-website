@@ -59,6 +59,7 @@ function validate(question: Question, form: Application): string | null {
   if ("optional" in question && question.optional) return null;
   if (!value) return `Please add your ${question.label.toLowerCase()} to continue.`;
   if (question.field === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email address, such as you@example.com.";
+  if (question.field === "x" && !/^@?[A-Za-z0-9_]{1,15}$/.test(value)) return "Enter your X handle, such as @handle.";
   if (question.field === "why" && value.length < 40) return "Write at least 40 characters so we can learn a little more about you.";
   return null;
 }
@@ -219,14 +220,15 @@ export default function ApplicationForm() {
     try {
       const response = await fetch("/api/apply", {
         method: "POST", headers: { "content-type": "application/json" },
+        signal: AbortSignal.timeout(30000),
         body: JSON.stringify({
           full_name: form.fullName.trim(), x_handle: form.x.trim(), telegram: form.telegram.trim(),
           email: form.email.trim(), country: form.country.trim(), role: form.role, desks: form.desks,
           links: form.links.trim(), context: form.context.trim(), why: form.why.trim(),
         }),
       });
-      if (response.status === 201) { setSubmitted(true); return; }
       const data = await response.json().catch(() => null);
+      if (response.status === 201 && data?.ok === true && Number.isInteger(data.id) && data.id > 0) { setSubmitted(true); return; }
       setError(response.status >= 500
         ? `We could not receive your application just now. Your answers are still here. Copy them and email ${EMAIL}, or try again.`
         : typeof data?.error === "string" ? data.error : "Check your details and try again.");

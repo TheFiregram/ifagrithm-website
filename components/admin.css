@@ -318,4 +318,5 @@
 
 .adm-login input{font-size:16px;min-width:0;width:100%}
 .adm-gold,.adm-export{background:#ffc425}
+.adm-ghost:disabled{opacity:.55;cursor:default}
 html[data-theme=light] .adm-tier-chip.is-on[data-tier="silver"],html[data-theme=light] .adm-tier-pill.silver{color:#505966;border-color:rgba(80,89,102,.4)}

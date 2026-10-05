@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { THEME_STORAGE_KEY, type Theme } from "../lib/theme";
+import { DEFAULT_THEME, THEME_STORAGE_KEY, type Theme } from "../lib/theme";
 
 const ThemeContext = createContext<{ theme: Theme; toggleTheme: () => void } | null>(null);
 
@@ -10,7 +10,7 @@ function readPreference(value: string | null): Theme | null {
 }
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>(DEFAULT_THEME);
   const preference = useRef<Theme | null>(null);
 
   const applyTheme = useCallback((next: Theme) => {
@@ -19,12 +19,11 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
   }, []);
 
   useEffect(() => {
-    const device = window.matchMedia("(prefers-color-scheme: dark)");
     try {
       preference.current = readPreference(localStorage.getItem(THEME_STORAGE_KEY));
     } catch {}
 
-    const syncTheme = () => applyTheme(preference.current ?? (device.matches ? "dark" : "light"));
+    const syncTheme = () => applyTheme(preference.current ?? DEFAULT_THEME);
     const syncStorage = (event: StorageEvent) => {
       if (event.key !== THEME_STORAGE_KEY && event.key !== null) return;
       preference.current = readPreference(event.newValue);
@@ -32,10 +31,8 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     };
 
     syncTheme();
-    device.addEventListener("change", syncTheme);
     window.addEventListener("storage", syncStorage);
     return () => {
-      device.removeEventListener("change", syncTheme);
       window.removeEventListener("storage", syncStorage);
     };
   }, [applyTheme]);
