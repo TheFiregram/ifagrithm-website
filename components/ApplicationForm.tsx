@@ -9,10 +9,10 @@ import "./application.css";
 const EMAIL = "Ifagrithm@gmail.com";
 const ROLES = [
   { id: "scout", title: "Research Scout", line: "Spot communities, apps and behaviour shifts worth investigating." },
-  { id: "partnership", title: "Partnership", line: "Bring IFAGRITHM in as a research partner for your team or project." },
+  { id: "partnership", title: "BD/Partnership", line: "Bring IFAGRITHM in as a research partner for your team or project." },
   { id: "analyst", title: "Research Analyst", line: "Turn onchain evidence and structured investigations into findings." },
 ] as const;
-const DESKS = ["Consumer apps", "DeFi", "RWA", "Infrastructure", "Market intel"];
+const DESKS = ["Consumer apps", "DeFi", "Protocols"];
 const NEXT_STEPS = [
   { title: "Apply", text: "Tell us about yourself and your work." },
   { title: "We review", text: "We read every application." },

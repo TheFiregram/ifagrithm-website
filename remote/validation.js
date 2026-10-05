@@ -1,4 +1,4 @@
-const DESKS = new Set(["Consumer apps", "DeFi", "RWA", "Infrastructure", "Market intel"]);
+const DESKS = new Set(["Consumer apps", "DeFi", "Protocols"]);
 const ROLES = new Set(["scout", "partnership", "analyst"]);
 
 export function isRecord(value) {

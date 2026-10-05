@@ -8,7 +8,7 @@ export async function buildApplicationsWorkbook(applications: StoreApplication[]
   const rows = applications.map(app => {
     const date = new Date(app.created_at);
     const applied = Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 16).replace("T", " ");
-    const role = app.role === "scout" ? "Research Scout" : app.role === "analyst" ? "Research Analyst" : "Partnership";
+    const role = app.role === "scout" ? "Research Scout" : app.role === "analyst" ? "Research Analyst" : "BD/Partnership";
     return [app.serial, applied, app.full_name, app.x_handle, app.telegram, app.email, app.country, role,
       app.desks.join(", "), app.tier ?? "", app.status, app.links, app.context, app.why]
       .map(value => ({ value, type: String }));

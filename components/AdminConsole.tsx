@@ -37,7 +37,7 @@ const FILTERS: { id: Filter; label: string }[] = [
 const TIERS = ["bronze", "silver", "gold"] as const;
 
 function roleLabel(role: string): string {
-  return role === "scout" ? "Research Scout" : role === "analyst" ? "Research Analyst" : "Partnership";
+  return role === "scout" ? "Research Scout" : role === "analyst" ? "Research Analyst" : "BD/Partnership";
 }
 
 export default function AdminConsole() {
