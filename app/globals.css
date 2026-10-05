@@ -113,5 +113,5 @@ html[data-theme=dark] .header-inner{background:rgba(16,16,16,.5);border-color:rg
 @media(prefers-reduced-transparency:reduce){.header-inner{background:var(--bg)!important;-webkit-backdrop-filter:none;backdrop-filter:none}}
 
 /* Scale the complete header with its logo and controls on downward scroll. */
-.site-header[data-compact=true][data-menu-open=false] .header-inner{scale:.3}
+.site-header[data-compact=true][data-menu-open=false] .header-inner{scale:.5}
 @media(prefers-reduced-motion:reduce){.header-inner,.header-inner .corner-brand .brand-mark,.header-inner .corner-brand .brand-mark img{transition:none}}
