@@ -15,7 +15,8 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/ifg-network
+RestrictSUIDSGID=true
+UMask=0077
 
 [Install]
 WantedBy=multi-user.target

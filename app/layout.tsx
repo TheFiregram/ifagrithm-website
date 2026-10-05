@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import ThemeProvider from "../components/ThemeProvider";
-import { themeBootstrapScript } from "../lib/theme";
+import { DEFAULT_THEME, themeBootstrapScript } from "../lib/theme";
 import "./globals.css";
 
 const title = "IFAGRITHM | Web3 Research & Intelligence";
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return <html lang="en" data-theme="dark" suppressHydrationWarning>
+  return <html lang="en" data-theme={DEFAULT_THEME} suppressHydrationWarning>
     <head><script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }}/></head>
     <body><ThemeProvider>{children}</ThemeProvider></body>
   </html>;

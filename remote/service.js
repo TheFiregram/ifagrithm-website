@@ -4,20 +4,20 @@
 import http from "node:http";
 import crypto from "node:crypto";
 import postgres from "postgres";
+import { isIP } from "node:net";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { validateApplication, validateEnquiry, validId } from "./validation.js";
+import { readJson, RequestError } from "./http.js";
 
-const sql = postgres(process.env.DATABASE_URL, { max: 4 });
-const PORT = Number(process.env.PORT || 4100);
-const SECRET = process.env.STORE_SECRET || "";
-const RESEND_KEY = process.env.RESEND_KEY || "";
-const RESEND_FROM = process.env.RESEND_FROM || "onboarding@resend.dev";
-const CLAIM_BASE = process.env.CLAIM_BASE || "https://ifagrithm-website.vercel.app";
-
-const LIMITS = {
-  full_name: 120, x_handle: 32, telegram: 32, email: 254, country: 80,
-  links: 4000, context: 2000, why: 4000,
-};
-const DESKS = ["Consumer apps", "DeFi", "RWA", "Infrastructure", "Market intel"];
-const ROLES = new Set(["scout", "partnership", "analyst"]);
+export function createStoreServer({ sql, secret, resendKey = "", resendFrom = "onboarding@resend.dev", claimBase = "https://ifagrithm-seven.vercel.app", enquiryNotifyEmail = "" }) {
+if (typeof secret !== "string" || !secret) throw new Error("STORE_SECRET is required.");
+const SECRET = secret;
+const RESEND_KEY = resendKey;
+const RESEND_FROM = resendFrom;
+const base = new URL(claimBase);
+if (base.protocol !== "https:" || base.username || base.password || base.search || base.hash) throw new Error("CLAIM_BASE must be an HTTPS URL.");
+const CLAIM_BASE = claimBase.replace(/\/+$/, "");
 const TIERS = new Set(["bronze", "silver", "gold"]);
 
 function roleLabel(role) {
@@ -36,50 +36,10 @@ function authorized(req) {
   return SECRET.length > 0 && timingSafeEqual(req.headers["x-ifg-secret"] || "", SECRET);
 }
 
-function send(res, code, body) {
+function send(res, code, body, headers = {}) {
   const json = JSON.stringify(body);
-  res.writeHead(code, { "content-type": "application/json", "content-length": Buffer.byteLength(json) });
+  res.writeHead(code, { "content-type": "application/json", "content-length": Buffer.byteLength(json), "cache-control": "no-store", "x-content-type-options": "nosniff", ...headers });
   res.end(json);
-}
-
-function readJson(req, max = 32 * 1024) {
-  return new Promise((resolve, reject) => {
-    let size = 0;
-    const chunks = [];
-    req.on("data", (c) => {
-      size += c.length;
-      if (size > max) { reject(new Error("body too large")); req.destroy(); return; }
-      chunks.push(c);
-    });
-    req.on("end", () => {
-      try { resolve(JSON.parse(Buffer.concat(chunks).toString("utf8"))); }
-      catch { reject(new Error("invalid json")); }
-    });
-    req.on("error", reject);
-  });
-}
-
-function cleanText(value, limit) {
-  return String(value ?? "").trim().slice(0, limit);
-}
-
-function validateApplication(body) {
-  const errors = [];
-  const app = {};
-  for (const [field, limit] of Object.entries(LIMITS)) {
-    const value = cleanText(body[field], limit);
-    app[field] = value;
-    if (!value && field !== "context") errors.push(`${field} is required`);
-  }
-  if (app.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(app.email)) errors.push("email is not valid");
-  if (!ROLES.has(body.role)) errors.push("role must be scout, partnership or analyst");
-  app.role = body.role;
-  const desks = Array.isArray(body.desks) ? body.desks.filter(d => DESKS.includes(d)) : [];
-  if (desks.length === 0) errors.push("at least one desk is required");
-  app.desks = desks;
-  // honeypot — real applicants never fill this
-  if (cleanText(body.company, 200) !== "") errors.push("spam");
-  return { app, errors };
 }
 
 function serialFor(id) {
@@ -90,9 +50,9 @@ function serialFor(id) {
 // actionable reason instead of Resend's raw response
 function shortMailError(detail) {
   if (detail.includes("testing emails")) {
-    return "Resend test mode can only mail the account owner (ghostofiyanu@gmail.com) — verify a domain to mail anyone";
+    return "Verify a sending domain to email applicants outside the email provider's test account.";
   }
-  return detail.slice(0, 120);
+  return "Email delivery failed. Check the email provider configuration.";
 }
 
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
@@ -106,14 +66,14 @@ function mailHtml(app, claimUrl) {
     <p style="font-size:15px;line-height:1.6;color:#b9b5a6;margin:0 0 22px;">
       Congratulations — your application to the IFAGRITHM research network has been approved.
       You are joining as a <strong style="color:#e5be31;">${roleLabel(app.role)}</strong>
-      on the ${desk} desk, with <strong style="color:#e5be31;">${app.tier}</strong> clearance.
+      on the ${desk} desk, with <strong style="color:#e5be31;">${escapeHtml(app.tier)}</strong> clearance.
     </p>
     <p style="margin:0 0 28px;">
-      <a href="${claimUrl}" style="background:#e5be31;color:#141005;font-weight:bold;font-size:15px;padding:14px 26px;border-radius:10px;text-decoration:none;display:inline-block;">Claim your network card</a>
+      <a href="${escapeHtml(claimUrl)}" style="background:#e5be31;color:#141005;font-weight:bold;font-size:15px;padding:14px 26px;border-radius:10px;text-decoration:none;display:inline-block;">Claim your network card</a>
     </p>
     <p style="font-size:13px;line-height:1.6;color:#8f8b7d;margin:0 0 10px;">
       The link opens your card studio: add your photo or X handle, then download your card — sized for X posts.
-      Your serial is ${app.serial}.
+      Your serial is ${escapeHtml(app.serial)}.
     </p>
     <p style="font-size:12px;color:#6f6c60;margin:28px 0 0;">Web3 Research &amp; Intelligence · ifagrithm.site</p>
   </div>
@@ -177,29 +137,43 @@ async function sendDeclineMail(app) {
 
 const limits = new Map();
 function rateLimited(req, path) {
- const key = `${req.socket.remoteAddress}:${path}`, now = Date.now();
+ const supplied = req.headers["x-ifg-client-ip"];
+ const proxyIp = req.headers["x-real-ip"];
+ const ip = typeof supplied === "string" && isIP(supplied) ? supplied : typeof proxyIp === "string" && isIP(proxyIp) ? proxyIp : req.socket.remoteAddress;
+ const key = `${ip}:${path}`, now = Date.now();
  let entry = limits.get(key);
- if (!entry || now > entry.until) entry = {count:0,until:now+60000};
+ if (!entry || now >= entry.until) {
+   if (limits.size >= 10000) {
+     for (const [k,v] of limits) if (v.until <= now) limits.delete(k);
+     if (limits.size >= 10000) return 60;
+   }
+   entry = {count:0,until:now+60000};
+ }
+ const limit = ["/apply", "/enquiries"].includes(path) ? 5 : 60;
+ if (entry.count >= limit) return Math.max(1, Math.ceil((entry.until-now)/1000));
  entry.count++; limits.set(key,entry);
- if(limits.size>10000) for(const [k,v] of limits) if(v.until<now) limits.delete(k);
- return entry.count>60;
+ return 0;
 }
 const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
   try {
-    if(req.method === "POST" && rateLimited(req,url.pathname))return send(res,429,{error:"Too many requests. Try again shortly."});
+    const url = new URL(req.url, "http://127.0.0.1");
+    if (!authorized(req)) return send(res, 401, { error: "unauthorized" });
+    if(req.method === "POST" && ["/apply", "/enquiries", "/approve", "/reject"].includes(url.pathname)) {
+      const retry = rateLimited(req, url.pathname);
+      if (retry) return send(res,429,{error:"Too many requests. Try again shortly."},{"retry-after":String(retry)});
+    }
     if (req.method === "POST" && url.pathname === "/enquiries") {
       if (!authorized(req)) return send(res, 401, { error: "unauthorized" });
       const body = await readJson(req);
-      const name = cleanText(body.name, 200), email = cleanText(body.email, 254);
-      const company = cleanText(body.company, 200), question = cleanText(body.question, 5000);
-      if (!name || !question || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return send(res, 400, { error: "Complete your name, email and question." });
+      const { enquiry, errors } = validateEnquiry(body);
+      if (errors.length) return send(res, 400, { error: errors.join("; ") });
+      const { name, email, company, question } = enquiry;
       const [row] = await sql`INSERT INTO enquiries (name,email,company,question) VALUES (${name},${email},${company},${question}) RETURNING id`;
       let mail_error;
-      if (RESEND_KEY && process.env.ENQUIRY_NOTIFY_EMAIL) {
+      if (RESEND_KEY && enquiryNotifyEmail) {
         try { const notice = await fetch("https://api.resend.com/emails", {
           method:"POST", signal:AbortSignal.timeout(10000), headers:{authorization:`Bearer ${RESEND_KEY}`,"content-type":"application/json"},
-          body:JSON.stringify({from:RESEND_FROM,to:[process.env.ENQUIRY_NOTIFY_EMAIL],reply_to:email,subject:"New IFAGRITHM project enquiry",text:`Name: ${name}\nEmail: ${email}\nCompany: ${company}\n\n${question}`})
+          body:JSON.stringify({from:RESEND_FROM,to:[enquiryNotifyEmail],reply_to:email,subject:"New IFAGRITHM project enquiry",text:`Name: ${name}\nEmail: ${email}\nCompany: ${company}\n\n${question}`})
         }); if (!notice.ok) mail_error = "Notification failed; enquiry is saved.";
         } catch { mail_error = "Notification failed; enquiry is saved."; }
       }
@@ -226,7 +200,7 @@ const server = http.createServer(async (req, res) => {
         SELECT id, full_name, x_handle, role, desks, tier, status, claimed_at
         FROM applications WHERE claim_token = ${claimMatch[1]} LIMIT 1`;
       if (!row || row.status !== "approved") return send(res, 404, { error: "not found" });
-      if (!row.claimed_at) await sql`UPDATE applications SET claimed_at = now() WHERE id = ${row.id}`;
+      if (!row.claimed_at) await sql`UPDATE applications SET claimed_at = now() WHERE id = ${row.id} AND status = 'approved' AND claim_token = ${claimMatch[1]} AND claimed_at IS NULL`;
       return send(res, 200, {
         serial: serialFor(row.id),
         name: row.full_name,
@@ -253,22 +227,24 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/approve") {
       const body = await readJson(req);
-      const id = Number(body.id);
-      const tier = String(body.tier || "").toLowerCase();
-      if (!Number.isInteger(id) || id <= 0) return send(res, 400, { error: "id is required" });
+      const id = body.id;
+      const tier = body.tier;
+      if (!validId(id)) return send(res, 400, { error: "id is required" });
       if (!TIERS.has(tier)) return send(res, 400, { error: "clearance tier is required (bronze, silver or gold)" });
-      const [row] = await sql`SELECT * FROM applications WHERE id = ${id} LIMIT 1`;
-      if (!row) return send(res, 404, { error: "not found" });
-      const token = row.claim_token ?? crypto.randomBytes(24).toString("hex");
+      const token = crypto.randomBytes(24).toString("hex");
       const [updated] = await sql`
         UPDATE applications SET status = 'approved', claim_token = ${token}, tier = ${tier}
-        WHERE id = ${id} RETURNING *`;
+        WHERE id = ${id} AND status = 'pending' RETURNING *`;
+      if (!updated) {
+        const [existing] = await sql`SELECT id FROM applications WHERE id = ${id}`;
+        return send(res, existing ? 409 : 404, { error: existing ? "Application already reviewed. Refresh the records." : "not found" });
+      }
       let mail;
       let mail_error;
       try {
         mail = await sendApprovalMail({ ...updated, serial: serialFor(updated.id) });
       } catch (err) {
-        console.error("mail failed:", err.message);
+        console.error("Approval email failed.");
         mail = { skipped: false, failed: true };
         mail_error = shortMailError(err.message);
       }
@@ -277,20 +253,22 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/reject") {
       const body = await readJson(req);
-      const id = Number(body.id);
-      if (!Number.isInteger(id) || id <= 0) return send(res, 400, { error: "id is required" });
-      const [row] = await sql`SELECT * FROM applications WHERE id = ${id} LIMIT 1`;
-      if (!row) return send(res, 404, { error: "not found" });
+      const id = body.id;
+      if (!validId(id)) return send(res, 400, { error: "id is required" });
       // rejecting kills any claim link the row may have had
       const [updated] = await sql`
-        UPDATE applications SET status = 'rejected', claim_token = NULL
-        WHERE id = ${id} RETURNING *`;
+        UPDATE applications SET status = 'rejected', claim_token = NULL, tier = NULL, claimed_at = NULL
+        WHERE id = ${id} AND status = 'pending' RETURNING *`;
+      if (!updated) {
+        const [existing] = await sql`SELECT id FROM applications WHERE id = ${id}`;
+        return send(res, existing ? 409 : 404, { error: existing ? "Application already reviewed. Refresh the records." : "not found" });
+      }
       let mail;
       let mail_error;
       try {
         mail = await sendDeclineMail(updated);
       } catch (err) {
-        console.error("mail failed:", err.message);
+        console.error("Decline email failed.");
         mail = { skipped: false, failed: true };
         mail_error = shortMailError(err.message);
       }
@@ -299,11 +277,25 @@ const server = http.createServer(async (req, res) => {
 
     send(res, 404, { error: "not found" });
   } catch (err) {
-    console.error("request failed:", err.message);
+    if (err instanceof RequestError) {
+      if ([408, 413, 415].includes(err.status)) { res.shouldKeepAlive = false; req.resume(); }
+      return send(res, err.status, { error: err.message });
+    }
+    if (err instanceof TypeError && err.code === "ERR_INVALID_URL") return send(res, 400, { error: "Invalid URL." });
+    console.error("Store request failed.");
     send(res, 500, { error: "internal error" });
   }
 });
+server.requestTimeout = 15000;
+server.headersTimeout = 10000;
+return server;
+}
 
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (!process.env.DATABASE_URL || !process.env.STORE_SECRET) throw new Error("DATABASE_URL and STORE_SECRET are required.");
+const PORT = Number(process.env.PORT || 4100);
+const sql = postgres(process.env.DATABASE_URL, { max: 4, connection: { statement_timeout: 10000 } });
+const server = createStoreServer({ sql, secret: process.env.STORE_SECRET, resendKey: process.env.RESEND_KEY, resendFrom: process.env.RESEND_FROM, claimBase: process.env.CLAIM_BASE, enquiryNotifyEmail: process.env.ENQUIRY_NOTIFY_EMAIL });
 server.listen(PORT, "127.0.0.1", () => console.log(`ifg-network store on 127.0.0.1:${PORT}`));
 
 for (const signal of ["SIGTERM", "SIGINT"]) {
@@ -312,4 +304,5 @@ for (const signal of ["SIGTERM", "SIGINT"]) {
     await sql.end({ timeout: 3 });
     process.exit(0);
   });
+}
 }

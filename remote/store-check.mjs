@@ -4,9 +4,15 @@ import { readFileSync } from "node:fs";
 
 const ca = readFileSync(new URL("./ifg-ca.crt", import.meta.url));
 const secret = process.env.STORE_SECRET;
+if (!secret) throw new Error("Set STORE_SECRET before checking the store.");
+const agent = new Agent({ connect: { ca } });
+try {
 const { statusCode, body } = await request("https://217.77.4.143/applications", {
   headers: { "x-ifg-secret": secret },
-  dispatcher: new Agent({ connect: { ca } }),
+  dispatcher: agent,
+  signal: AbortSignal.timeout(10000),
 });
 console.log("status:", statusCode);
-console.log((await body.text()).slice(0, 150));
+const result = await body.json();
+console.log("application count:", Array.isArray(result.applications) ? result.applications.length : "unavailable");
+} finally { await agent.close(); }

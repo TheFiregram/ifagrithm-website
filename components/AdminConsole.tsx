@@ -4,7 +4,7 @@
 // picking a clearance) and Reject, an Excel export, and a sidebar with
 // the counts and status views.
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import "./admin.css";
 import EnquiryConsole from "./EnquiryConsole";
 
@@ -50,41 +50,77 @@ export default function AdminConsole() {
   const [openId, setOpenId] = useState<number | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [tierPick, setTierPick] = useState<Record<number, string>>({});
+  const [authBusy, setAuthBusy] = useState(false);
+  const actionBusy = useRef(false);
+  const revision = useRef(0);
 
-  const load = useCallback(async () => {
-    const res = await fetch("/api/admin/applications", { cache: "no-store" });
-    if (res.status === 401) { setAuthed(false); return; }
-    if (!res.ok) { setError("Application records are unavailable. Check the backend connection."); setAuthed(true); return; }
-    const data = await res.json();
-    setApps(data.applications ?? []);
-    setError("");
-    setAuthed(true);
+  const resetSession = useCallback(() => {
+    revision.current++;
+    setAuthed(false); setApps([]); setNotes({}); setTierPick({}); setOpenId(null);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  const load = useCallback(async () => {
+    const current = revision.current;
+    try {
+      const res = await fetch("/api/admin/applications", { cache: "no-store", signal: AbortSignal.timeout(30000) });
+      if (current !== revision.current) return;
+      if (res.status === 401) { resetSession(); return; }
+      if (!res.ok) { setError("Application records are unavailable. Check the backend connection."); setAuthed(true); return; }
+      const data = await res.json();
+      if (current !== revision.current) return;
+      if (!Array.isArray(data?.applications)) throw new Error("Invalid records.");
+      setApps(data.applications);
+      setError("");
+      setAuthed(true);
+    } catch {
+      if (current !== revision.current) return;
+      setError("Could not load your session. Check your connection and try again.");
+      setAuthed(value => value ?? false);
+    }
+  }, [resetSession]);
+
+  const invalidateReads = useCallback(() => { revision.current++; }, []);
+  useEffect(() => { void load(); return invalidateReads; }, [load, invalidateReads]);
 
   async function login(event: React.FormEvent) {
     event.preventDefault();
+    if (actionBusy.current) return;
+    actionBusy.current = true;
+    setAuthBusy(true);
     setError("");
+    try {
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ password }),
+      signal: AbortSignal.timeout(30000),
     });
-    if (!res.ok) { setError(res.status === 503 ? "Admin access is not configured yet." : "Wrong password."); return; }
+    if (!res.ok) {
+      setError(res.status === 503 ? "Admin access is not configured yet." : res.status === 429 ? "Too many sign-in attempts. Wait a minute and try again." : res.status === 401 ? "Wrong password." : "Sign in failed. Try again.");
+      return;
+    }
     setPassword("");
-    load();
+    await load();
+    } catch { setError("Could not sign in. Check your connection and try again."); }
+    finally { actionBusy.current = false; setAuthBusy(false); }
   }
 
   async function logout() {
-    await fetch("/api/admin/logout", { method: "POST" });
-    setApps([]);
-    setAuthed(false);
+    if (actionBusy.current) return;
+    actionBusy.current = true; setAuthBusy(true); revision.current++;
+    try {
+      const res = await fetch("/api/admin/logout", { method: "POST", signal: AbortSignal.timeout(30000) });
+      if (!res.ok) throw new Error();
+      resetSession(); setError("");
+    } catch { setError("Sign out failed. Check your connection and try again."); }
+    finally { actionBusy.current = false; setAuthBusy(false); }
   }
 
   async function approve(id: number) {
     const tier = tierPick[id];
     if (!tier) { setError("Pick a clearance (bronze, silver or gold) before approving."); return; }
+    if (actionBusy.current) return;
+    actionBusy.current = true; revision.current++;
     setBusyId(id);
     setError("");
     try {
@@ -92,9 +128,10 @@ export default function AdminConsole() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ id, tier }),
+        signal: AbortSignal.timeout(30000),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || "Approve failed."); return; }
+      if (!res.ok) { if (res.status === 401) resetSession(); if (res.status === 409) await load(); setError(data?.error || "Approve failed."); return; }
       setApps(rows => rows.map(r => r.id === id ? { ...r, status: "approved", tier, claim_token: data.claim_url?.split("t=")[1] ?? r.claim_token } : r));
       setNotes(n => ({ ...n, [id]: data.mail_error
         ? `Approved at ${tier}. Mail failed — ${data.mail_error}`
@@ -104,11 +141,14 @@ export default function AdminConsole() {
     } catch {
       setError("Approve failed — store unreachable.");
     } finally {
+      actionBusy.current = false;
       setBusyId(null);
     }
   }
 
   async function reject(id: number) {
+    if (actionBusy.current) return;
+    actionBusy.current = true; revision.current++;
     setBusyId(id);
     setError("");
     try {
@@ -116,9 +156,10 @@ export default function AdminConsole() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ id }),
+        signal: AbortSignal.timeout(30000),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || "Reject failed."); return; }
+      if (!res.ok) { if (res.status === 401) resetSession(); if (res.status === 409) await load(); setError(data?.error || "Reject failed."); return; }
       setApps(rows => rows.map(r => r.id === id ? { ...r, status: "rejected", claim_token: null } : r));
       setNotes(n => ({ ...n, [id]: data.mail_error
         ? `Rejected. Mail failed — ${data.mail_error}`
@@ -128,6 +169,7 @@ export default function AdminConsole() {
     } catch {
       setError("Reject failed — store unreachable.");
     } finally {
+      actionBusy.current = false;
       setBusyId(null);
     }
   }
@@ -154,13 +196,16 @@ export default function AdminConsole() {
           <h1>Sign in</h1>
           <input
             type="password"
+            autoComplete="current-password"
+            maxLength={1024}
+            required
             value={password}
             autoFocus
             onChange={(e) => { setPassword(e.target.value); setError(""); }}
             placeholder="Admin password"
             aria-label="Admin password"
           />
-          <button className="adm-gold" type="submit" disabled={!password}>Enter</button>
+          <button className="adm-gold" type="submit" disabled={!password || authBusy}>{authBusy ? "Signing in…" : "Enter"}</button>
           {error ? <p className="adm-error" role="alert">{error}</p> : null}
         </form>
       </div>
@@ -198,14 +243,14 @@ export default function AdminConsole() {
           ))}
         </nav>
         <a className="adm-export" href="/api/admin/export" download>Download Excel</a>
-        <button className="adm-ghost" type="button" onClick={logout}>Sign out</button>
+        <button className="adm-ghost" type="button" onClick={logout} disabled={authBusy || busyId !== null}>Sign out</button>
       </aside>
 
       <main className="adm-main">
         <EnquiryConsole/>
         <header className="adm-head">
           <h1>Applications</h1>
-          <button className="adm-ghost" type="button" onClick={load}>Refresh</button>
+          <button className="adm-ghost" type="button" onClick={() => void load()} disabled={authBusy || busyId !== null}>Refresh</button>
         </header>
         {error ? <p className="adm-error" role="alert">{error}</p> : null}
 
@@ -279,7 +324,7 @@ export default function AdminConsole() {
                             <button
                               className="adm-gold"
                               type="button"
-                              disabled={busyId === app.id}
+                                disabled={busyId !== null || authBusy}
                               title={tierPick[app.id] ? `Approve at ${tierPick[app.id]}` : "Pick a clearance first"}
                               onClick={() => approve(app.id)}
                             >
@@ -288,7 +333,7 @@ export default function AdminConsole() {
                             <button
                               className="adm-ghost"
                               type="button"
-                              disabled={busyId === app.id}
+                              disabled={busyId !== null || authBusy}
                               onClick={() => reject(app.id)}
                             >
                               Reject
