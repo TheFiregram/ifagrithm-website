@@ -3,27 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",
     "next": "15.5.26",
     "react": "19.1.9",
     "react-dom": "19.1.9",
-    "three": "^0.186.1",
-    "undici": "^8.11.2",
-    "xlsx": "^0.18.5"
+    "undici": "^6.21.3",
+    "write-excel-file": "4.1.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@eslint/eslintrc": "3.3.1",
     "@types/node": "22.15.30",
     "@types/react": "19.1.6",
     "@types/react-dom": "19.1.5",
-    "@types/three": "^0.186.0",
     "eslint": "9.34.0",
     "eslint-config-next": "15.5.26",
     "typescript": "5.8.3"

@@ -1,18 +1,8 @@
 node_modules/
 .next/
+.next-dev/
 out/
-.env*
-!.env.example
-*.tsbuildinfo
 .vercel/
-verification/
-.vercel
-
-# local token files (never commit)
-*.env
-!*.example.env
-c.txt
-shot-*.png
-shot-*.mjs
-IFAGRITHM-*.png
-test-*.mjs
+.sites-runtime/
+.env*
+*.tsbuildinfo

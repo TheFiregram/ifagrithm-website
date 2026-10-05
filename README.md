@@ -1,65 +1,45 @@
-# IFAGRITHM Website
+# IFAGRITHM
 
-Public website for **IFAGRITHM — Web3 Research & Intelligence**. The existing Next.js app and supplied logo are retained.
+Web3 research and intelligence website built with Next.js and React.
 
-## Local development
+## Development
 
 ```sh
 npm ci
 npm run dev
 ```
 
-## Quality checks
+## Build
 
 ```sh
-npm run lint
-npm run typecheck
 npm run build
 ```
 
-## Homepage
+Vercel runs the Next.js application using the included configuration. The main branch is the production source.
 
-The page is a single scroll: a full-viewport landing hero (the logo rebuilt as a lit three.js gold object that loads assembled, holds, then spins, over an original GLSL backdrop — fog, ground tide and all background styles are painted by one shader, so no layer clashes), a deliverables ticker, four services as full-width rows with ghost numbers and a unique animated motif each (segment donut, candles, constellation, decision fork), an evidence trio with animated motifs, the conceptual research map rendered as a live flow, an approach statement over a gold-tinted texture, a sectors strip, a short FAQ and a project contact form. Buttons carry a shine-sweep hover, cards lift with a gold edge, sections fade up on scroll, and the footer closes on a giant ghost IFAGRITHM wordmark. The site is dark-only by choice; the light theme tokens remain in `globals.css` but no toggle is exposed. Existing `#method` and `#about` URLs land at Approach.
+It includes a 1 second brand entrance, 1 second hold, and 1.5 second circular exit; a rotating headline and animated dot field; five pinned feature panels with upright orbit labels, evidence flows, moving research cards, an animated ruler, and a connected signal field; a three-stage research process; rolling counters; an accessible FAQ; a moving closing card wall; and an animated character footer.
 
-The hero background is locked to the Horizon style (fog only, no tide — removed as visually clashing). three.js ships in the main bundle so the mark mounts as soon as the page hydrates: it sits perfectly still on load, then spins up. The environment map is a canvas-painted gradient rather than a generated room, and the pixel ratio is capped at 1.75. The gold fluid texture from the approach section is repeated at lower opacity in the evidence and contact sections.
+Feature panels support wheel gestures, touch swipes, and keyboard navigation. Short screens and reduced motion use direct panel controls. Canvas effects and moving card columns pause off screen. New visitors start in light mode, independent of their device theme. A chosen dark or light theme is saved locally, applied before the first paint, and synced between tabs. The fixed glass header keeps the demo link and theme switch accessible during scrolling. Geist is served locally with its font license.
 
-Three.js is the only runtime dependency added; the hero is a static pose when `prefers-reduced-motion` is set and pauses off-screen. The approach band texture is an Unsplash-licensed image recoloured to the brand gold in CSS (`public/band-bg.jpg`).
+The counters describe the four research areas, three stages, and one decision being studied. Research cards illustrate possible outputs; they are not customer results or testimonials.
 
-Content that needs sign-off before a public release (all drafted from claims already on the page, no new facts): the FAQ answers, the sectors strip list, and the evidence-card descriptions. The ticker only reuses the published service outputs.
+The enquiry form validates the required fields and opens the visitor's email app with a complete draft addressed to Ifagrithm@gmail.com. Visitors review and send the draft in their email app. The form keeps their answers and offers links to reopen the draft or compose it in Gmail. It does not claim delivery or depend on the network store. No enquiry is sent automatically.
 
-No research showcase is published in this release: the website repository contains no matching public research source and working article destination for the candidate Superteam UK, lending utilisation or wallet behaviour work. Add only verified, public, non-confidential material with useful destinations; independent work must retain its independent status.
+The member card studio at `/network` opens from an approved application's claim link. Approved names, roles, research desks and clearance tiers stay fixed; members can add their X photo, tagline and bio. The editor starts in light mode for new visitors and shares the site's saved theme preference. The glass header keeps its theme switch accessible. The responsive editor styles are separate from the card artwork, which keeps the same 1080 × 1350 PNG design in both themes. The public sample cannot be downloaded as an approved card.
 
-## Contact
+## Verification
 
-`components/Site.tsx` retains the existing email, X and LinkedIn destinations. The four-field form validates required entries and opens an encoded email brief. The visitor reviews and sends it in their email app. Clipboard success is shown only after a successful write; a selectable brief is available when copying fails. No message is sent or stored by the website.
-
-## Research network pages
-
-Two additional routes support the research network:
-
-- **`/application`** — the join-the-network application (replaces the external Tally form). Sectioned form: identity (name, X, Telegram, email, country), role selection (Research Scout / Research Analyst) with desk chips, proof-of-work links, and motivation. Submission composes a structured email to IFAGRITHM — nothing is stored server-side, matching the brief form. The homepage nav and footer link here. Section copy beyond the identity fields is drafted for sign-off.
-- **`/network`** — internal card studio (noindex). Renders a member's network card at exactly 1080×1350 and exports it as a PNG in-browser via `html-to-image` (the only dependency added by these routes; three.js remains the other). Photo comes from an upload or an X handle resolved through `/api/avatar` (same-origin proxy over unavatar.io; monogram fallback). Tier colors are the one semantic exception to the single-accent rule.
-
-The production approval flow is live:
-
-- **`/api/apply`** — `/application` posts here; the route forwards to the network store on the Contabo box (applications of record live in the `ifagrithm` database in the existing PostgreSQL 16 cluster, loopback-only). If the store is unreachable the form tells the applicant to use the copy fallback, so nothing is silently lost.
-- **`/admin`** — password-gated console (one shared password, HMAC-signed cookie). Lists the queue; **Approve** marks the row approved, mints a claim token and mails the congratulations with a `/network?t=` link through Resend; **Reject** marks it rejected, kills any claim link, and sends a polite decline. Resend currently runs in test mode — mail is delivered to the account owner's inbox only — until a domain is verified and `RESEND_FROM`/`CLAIM_BASE` flip on the store.
-- **`/network?t=…`** — a valid claim token pre-fills the member's name, role, desk and serial; they add a photo and download the card.
-
-The store itself is a small Node service (`ifg-network.service`) on the box at `127.0.0.1:4100`, fronted by nginx on 443 under a private CA with an IP SAN; the Vercel functions pin that CA. No database port is exposed. When a domain is pointed at the box, only the cert, `IFG_STORE_URL` and the store's mail settings change.
-
-## Release
-
-Use the existing private `olamilekanalaga/IFAGRITHM-Website` repository and `main` branch. Never force-push. The existing Vercel project is `ifagrithm-website`, project ID `prj_jroQgUuUH4LtyKpqjbmaqWg9CQZW`, under `olamilekans-projects-6812339f`.
-
-Production: https://ifagrithm-website.vercel.app
-
-The project uses the Next.js framework preset. When automatic Git integration is not configured, deploy the clean website checkout using the existing CLI authentication:
+Use Node 22.18 or newer (CI uses Node 24). Install both dependency sets before running the regression suite:
 
 ```sh
-npx vercel deploy --prod --yes --project ifagrithm-website --scope olamilekans-projects-6812339f
+npm ci
+npm ci --prefix remote
+npm test
+npm run lint
+npm run typecheck
+npm run build
+npm audit --omit=dev
+npm audit --prefix remote
 ```
 
-Open the public production URL and verify the actual release before describing it as live. Preserve domain bindings and project access. The adjacent research terminal is outside this repository and release.
-
-Local browser verification scripts and screenshots are ignored under `verification/`. See `VERIFICATION.md` for the acceptance record.
+The suite uses disposable local PostgreSQL data via PGlite. It sends no real email and does not touch production records. GitHub runs these checks on pull requests and changes to main. The application and enquiry APIs validate JSON types, field lengths and request sizes; private API responses cannot be cached. Avatar downloads accept verified raster image types from approved hosts and reject SVG, unsafe redirects and oversized responses. The admin password must contain at least 16 characters. See SECURITY_REVIEW.md for findings, evidence and deployment limits.
