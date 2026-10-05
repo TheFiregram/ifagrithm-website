@@ -60,13 +60,23 @@ export default function Site() {
     }),{threshold:.08});
     document.querySelectorAll("[data-reveal-section]").forEach(el=>observer.observe(el));
     let frame=0;
+    let previousY=Math.max(0,window.scrollY),travel=0;
     const update=()=>{
       frame=0;
-      const y=window.scrollY,vh=window.innerHeight,maximum=document.documentElement.scrollHeight-vh;
+      const y=Math.max(0,window.scrollY),vh=window.innerHeight,maximum=document.documentElement.scrollHeight-vh;
       const exit=reduced.matches?0:1-Math.pow(1-Math.min(1,y/(.6*vh)),3);
       content.current?.style.setProperty("--hero-exit",String(exit));
       if(progress.current)progress.current.style.transform=`scaleX(${maximum>0?y/maximum:0})`;
-      if(header.current)header.current.dataset.scrolled=String(y>40);
+      if(header.current){
+        header.current.dataset.scrolled=String(y>40);
+        const delta=y-previousY;
+        if(y<=40){travel=0;header.current.dataset.compact="false";}
+        else if(delta!==0){
+          travel=Math.sign(delta)===Math.sign(travel)?travel+delta:delta;
+          if(Math.abs(travel)>=12)header.current.dataset.compact=String(travel>0);
+        }
+      }
+      previousY=y;
     };
     const schedule=()=>{if(!frame)frame=requestAnimationFrame(update);};
     window.addEventListener("scroll",schedule,{passive:true});window.addEventListener("resize",schedule);reduced.addEventListener("change",schedule);update();
@@ -97,7 +107,7 @@ export default function Site() {
     {introStage!=="ready"?<IntroScreen onStageChange={setIntroStage}/>:null}
     <div className="site-content" data-intro={introStage} ref={content} inert={introBlocks} aria-hidden={introBlocks}>
       <a className="skip-link" href="#main">Skip to content</a><div className="reading-progress" ref={progress} aria-hidden="true"/>
-      <header className="site-header" ref={header}><div className="header-inner"><Brand/><nav id="primary-navigation" className={`navigation${menu?" is-open":""}`} aria-label="Main navigation">{links.map(link=><a key={link.href} href={link.href} onClick={()=>setMenu(false)}>{link.label}</a>)}</nav><div className="header-actions"><a className="button demo-cta header-cta" href="#contact" onClick={()=>setMenu(false)}>Book a demo <Arrow/></a><button className="theme-button" type="button" onClick={toggleTheme} aria-label={`Switch to ${theme==="dark"?"light":"dark"} mode`} title={`Switch to ${theme==="dark"?"light":"dark"} mode`}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.5"/><path d="M12 5a7 7 0 0 1 0 14Z" fill="currentColor"/></svg></button><button className="menu-button" ref={menuButton} type="button" onClick={()=>setMenu(current=>!current)} aria-label={menu?"Close menu":"Open menu"} aria-expanded={menu} aria-controls="primary-navigation"><span/><span/></button></div></div></header>
+      <header className="site-header" ref={header} data-menu-open={menu}><div className="header-inner"><Brand/><nav id="primary-navigation" className={`navigation${menu?" is-open":""}`} aria-label="Main navigation">{links.map(link=><a key={link.href} href={link.href} onClick={()=>setMenu(false)}>{link.label}</a>)}</nav><div className="header-actions"><a className="button demo-cta header-cta" href="#contact" onClick={()=>setMenu(false)}>Book a demo <Arrow/></a><button className="theme-button" type="button" onClick={toggleTheme} aria-label={`Switch to ${theme==="dark"?"light":"dark"} mode`} title={`Switch to ${theme==="dark"?"light":"dark"} mode`}><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="7" stroke="currentColor" strokeWidth="1.5"/><path d="M12 5a7 7 0 0 1 0 14Z" fill="currentColor"/></svg></button><button className="menu-button" ref={menuButton} type="button" onClick={()=>setMenu(current=>!current)} aria-label={menu?"Close menu":"Open menu"} aria-expanded={menu} aria-controls="primary-navigation"><span/><span/></button></div></div></header>
       {menu?<div className="menu-scrim" onClick={()=>setMenu(false)} aria-hidden="true"/>:null}
       <main id="main">
         <section className="hero" id="top" aria-label="IFAGRITHM research and intelligence"><HeroSignals/><div className="hero-content"><div className="hero-mark-motion"><div className="hero-mark hero-enter"><BrandMark priority/><span className="hero-logo-scan"/></div></div><div className="hero-copyblock"><RotatingHeadline running={introStage==="revealing"||introStage==="ready"}/><p className="hero-copy hero-enter">User behaviour, <span className="research-pill"><span className="research-pill-icons" aria-hidden="true"><i>U</i><i>M</i><i>G</i><i>D</i></span>market research</span>, and competitor intelligence<br className="desktop-break"/> for clearer business decisions.</p><div className="hero-actions hero-enter"><a className="button network-cta" href="/application">Join the network <Arrow/></a><a className="button demo-cta" href="#contact">Book Demo <Arrow/></a></div></div></div><a className="scroll-cue hero-enter" href="#services" aria-label="Explore our research services"><span>Scroll to explore</span><i><span/></i></a></section>
