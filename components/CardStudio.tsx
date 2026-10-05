@@ -16,13 +16,14 @@ import { useTheme } from "./ThemeProvider";
 import "./network.css";
 import "./network-studio.css";
 
-const ROLES = ["RESEARCH SCOUT", "PARTNERSHIP", "RESEARCH ANALYST"] as const;
+const ROLES = ["RESEARCH SCOUT", "BD/PARTNERSHIP", "RESEARCH ANALYST"] as const;
 const TIERS = ["BRONZE", "SILVER", "GOLD"] as const;
-const DESK_LABELS = ["CONSUMER APPS", "DEFI", "RWA", "INFRASTRUCTURE", "MARKET INTEL"] as const;
+// Retain previous desk labels when reading existing approved claims.
+const DESK_LABELS = ["CONSUMER APPS", "DEFI", "PROTOCOLS", "RWA", "INFRASTRUCTURE", "MARKET INTEL"] as const;
 
 type Role = (typeof ROLES)[number];
 type Tier = (typeof TIERS)[number];
-type Desk = "CONSUMER APPS" | "DEFI" | "RWA" | "INFRASTRUCTURE" | "MARKET INTEL";
+type Desk = (typeof DESK_LABELS)[number];
 
 type CardData = {
   name: string;
@@ -71,6 +72,7 @@ function StudioIcon({ name }: { name: "arrow" | "download" | "check" | "lock" | 
 }
 
 function displayLabel(value: string): string {
+  if (value === "BD/PARTNERSHIP") return "BD/Partnership";
   if (value === "DEFI") return "DeFi";
   if (value === "RWA") return value;
   return value.toLowerCase().replace(/\b\w/g, letter => letter.toUpperCase());
@@ -169,11 +171,12 @@ export default function CardStudio() {
         if (!alive) return;
         const desk = DESK_LABELS.find(d => d === String(info.desk ?? "").toUpperCase());
         const tier = TIERS.find(t => t === String(info.tier ?? "").toUpperCase());
-        if (typeof info.name !== "string" || typeof info.serial !== "string" || !desk || !tier || !(ROLES as readonly string[]).includes(info.role)) throw new Error("Invalid claim response.");
+        const role = info.role === "PARTNERSHIP" ? "BD/PARTNERSHIP" : info.role;
+        if (typeof info.name !== "string" || typeof info.serial !== "string" || !desk || !tier || !(ROLES as readonly string[]).includes(role)) throw new Error("Invalid claim response.");
         setData(d => ({
           ...d,
           name: info.name || d.name,
-          role: (ROLES as readonly string[]).includes(info.role) ? info.role as Role : d.role,
+          role: role as Role,
           desk: desk ?? d.desk,
           tier: tier ?? d.tier,
           tagline: "", bio: "",

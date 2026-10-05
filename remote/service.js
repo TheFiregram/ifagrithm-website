@@ -23,7 +23,7 @@ const TIERS = new Set(["bronze", "silver", "gold"]);
 function roleLabel(role) {
   return role === "scout" ? "Research Scout"
     : role === "analyst" ? "Research Analyst"
-    : "Partnership";
+    : "BD/Partnership";
 }
 
 function timingSafeEqual(a, b) {

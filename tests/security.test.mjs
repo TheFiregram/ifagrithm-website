@@ -64,6 +64,13 @@ test('database IDs cannot be coerced or overflow the serial column', () => {
   for (const value of ['1', true, null, 1.5, 0, -1, 2147483648]) assert.equal(validId(value), false);
   assert.equal(validId(1), true);
 });
+test('applications accept the three current research desks and reject retired choices', () => {
+  const desks = ['Consumer apps', 'DeFi', 'Protocols'];
+  assert.deepEqual(validateApplication({ ...valid, role: 'partnership', desks }).errors, []);
+  for (const desk of ['RWA', 'Infrastructure', 'Market intel']) {
+    assert.ok(validateApplication({ ...valid, desks: [desk] }).errors.length);
+  }
+});
 test('reject weak, tampered, expired, extended, and malformed admin sessions', () => {
   const secret = 'test-only-admin-password-32-chars';
   const now = Date.now();
