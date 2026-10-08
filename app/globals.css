@@ -115,3 +115,81 @@ html[data-theme=dark] .header-inner{background:rgba(16,16,16,.5);border-color:rg
 /* Scale the complete header with its logo and controls on downward scroll. */
 .site-header[data-compact=true][data-menu-open=false] .header-inner{scale:.5}
 @media(prefers-reduced-motion:reduce){.header-inner,.header-inner .corner-brand .brand-mark,.header-inner .corner-brand .brand-mark img{transition:none}}
+
+/* Positioning copy uses the existing brand tokens and responsive components. */
+.hero-headline{white-space:normal;font-size:clamp(32px,4.4vw,62px);text-wrap:balance}
+.hero-category{font-size:clamp(10px,1.1vw,12px);letter-spacing:.1em;text-wrap:balance;margin-bottom:16px}
+.hero-copy{max-width:760px;margin-inline:auto;line-height:1.65}
+.hero-mark{width:140px;height:140px}
+.hero-mark .brand-mark{width:90px;height:118px;scale:1}
+.hero-mark .brand-mark img{width:158px;height:158px;top:-20px;left:-34px}
+.hero-actions .button,.method-copy>.button,.about-copy>.button,.outro-content>.button{white-space:normal;height:auto;min-height:46px;padding-block:12px;text-align:center}
+.features-scroll{height:460svh}
+.feature-copy h3{font-size:clamp(28px,3.1vw,44px);line-height:1.12}
+.feature-copy h3>span{white-space:normal}
+.feature-copy-stack{min-height:440px}
+.feature-copy p{margin-top:18px}
+.feature-outputs{display:grid;gap:7px;font-size:14px;color:var(--muted);padding-left:18px;list-style:disc}
+.feature-label{letter-spacing:.06em}
+.method-scroll{height:auto}
+.method-sticky{position:relative;height:auto;min-height:100svh;padding-block:100px 70px}
+.method-row{padding-block:16px}
+.method-avatars{display:none}
+.method-number>span{display:none}
+.method-stage-label{font-size:20px}
+.method-row-copy>p{font-size:15px;max-width:360px}
+.about-section{background:var(--surface);padding-block:100px;scroll-margin-top:80px}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,6vw,90px);scroll-margin-top:100px}
+.about-grid .section-heading{font-size:clamp(34px,4vw,56px);margin-top:24px;text-wrap:balance}
+.about-copy{min-width:0;color:var(--muted)}
+.about-copy p+p{margin-top:20px}
+.about-copy blockquote{margin:28px 0;padding-left:20px;border-left:2px solid var(--gold);font-size:22px;line-height:1.5;color:var(--text)}
+.about-copy>.button{margin-top:28px}
+.contact-topics{padding-left:20px;margin-top:22px;color:var(--muted)}
+.contact-topics li+li{margin-top:8px}
+@media(max-width:880px),(max-height:760px){
+  .features-scroll{height:auto}
+  .features-sticky{position:relative;height:auto;min-height:0;padding-block:100px 80px}
+  .feature-card{max-height:none;min-height:0;padding:28px;gap:25px}
+  .feature-left{flex-basis:50%;max-width:none;align-self:stretch}
+  .feature-copy-stack{height:auto;min-height:0}
+  .feature-copy{position:relative;display:none;inset:auto}
+  .feature-copy.is-active{display:flex}
+  .feature-outputs{display:grid;font-size:14px}
+  .feature-right{min-height:300px}
+  .feature-rail{inset:auto auto 22px 50%;transform:translateX(-50%);flex-direction:row;gap:8px}
+  .feature-rail button{width:44px;height:44px;justify-content:center;padding:10px}
+  .method-grid{gap:40px}
+  .method-sticky{padding-block:90px 65px}
+}
+@media(max-width:880px){
+  .feature-right{display:none}
+  .feature-left{width:100%}
+  .feature-card{display:block}
+  .feature-copy h3{font-size:clamp(28px,5vw,40px)}
+  .feature-copy p{font-size:15px}
+  .about-grid{grid-template-columns:1fr}
+  .about-section{padding-block:75px}
+}
+@media(max-width:560px){
+  .hero{min-height:100svh;padding:100px 20px 70px}
+  .hero-mark{width:90px;height:90px}
+  .hero-mark .brand-mark{width:60px;height:78px}
+  .hero-mark .brand-mark img{width:105px;height:105px;top:-13px;left:-22px}
+  .hero-copy{font-size:15px;margin-top:20px}
+  .hero-actions{width:100%;margin-top:24px}
+  .hero-actions .button{width:100%;max-width:360px;font-size:14px}
+  .feature-label{font-size:10px}
+  .method-stage-label{font-size:17px}
+  .method-row-copy>p{font-size:14px}
+  .method-number{font-size:36px}
+}
+@media(prefers-reduced-motion:reduce){
+  .features-scroll{height:auto}
+  .features-sticky{position:relative;height:auto}
+  .feature-card{max-height:none;min-height:0}
+  .feature-copy-stack{min-height:0;height:auto}
+  .feature-copy{position:relative;display:none}
+  .feature-copy.is-active{display:flex}
+  .feature-outputs{display:grid}
+}
