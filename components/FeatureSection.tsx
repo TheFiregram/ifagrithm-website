@@ -5,11 +5,11 @@ import { Arrow } from "./Brand";
 import { BriefWall, EvidenceRuler, MarketFlow, OrbitField, SignalGraph } from "./ResearchVisuals";
 
 const features = [
-  {tab:"User behaviour",label:"USER & BEHAVIOUR RESEARCH",lines:["Real people.","Clear patterns."],description:"Study how people use your product, what different user groups do, and how their activity changes over time.",outputs:["Behaviour segments","Retention and activity research"]},
-  {tab:"Market intelligence",label:"MARKET & COMPETITOR INTELLIGENCE",lines:["Know the market.","See your options."],description:"Investigate competing products, market activity, and the alternatives your users already choose.",outputs:["Competitor studies","Market briefs","Product comparisons"]},
-  {tab:"Growth research",label:"GROWTH & DISTRIBUTION RESEARCH",lines:["Find your people.","Plan your reach."],description:"Find where relevant audiences already are. Assess the channels, communities, and partnerships worth testing.",outputs:["Audience research","Distribution maps","Partnership assessments"]},
-  {tab:"Decision research",label:"DECISION RESEARCH & MEASUREMENT",lines:["Evidence first.","Decisions next."],description:"Bring evidence together around a business question. Measure what happens when your team acts on it.",outputs:["Decision briefs","Intervention analysis","Custom analytical studies"]},
-  {tab:"Our approach",label:"THE IFAGRITHM APPROACH",lines:["From behaviour","to decisions."],description:"Start with a clear question. Investigate the evidence. Deliver the patterns, limitations, and practical options your team can use.",outputs:[]},
+  {tab:"Research & intelligence",label:"RESEARCH & BUSINESS INTELLIGENCE",lines:["Study the market.","Read the signals."],description:"Investigate customers, competitors, products and market conditions to answer a defined business question.",outputs:["Market and competitor briefs","Behavioural research","Product intelligence reports"]},
+  {tab:"Business advisory",label:"BUSINESS ANALYTICS & ADVISORY",lines:["See what drives","performance."],description:"Assess customer acquisition, activation, retention and commercial performance to identify practical options.",outputs:["Growth and retention analysis","Decision briefs","Performance reviews"]},
+  {tab:"Ecosystem & partners",label:"PARTNERSHIP & ECOSYSTEM INTELLIGENCE",lines:["Find relevant","relationships."],description:"Research potential partners, distribution channels and ecosystem opportunities before committing resources.",outputs:["Partner assessments","Distribution studies","Ecosystem mapping"]},
+  {tab:"Strategy & operations",label:"STRATEGY & SELECTED OPERATIONS",lines:["Research the path.","Plan the action."],description:"Where the evidence supports an intervention, define a strategy and coordinate agreed partners or campaign activities within a clear scope.",outputs:["Behaviour-led campaign plans","Activation research","Engagement reviews"]},
+  {tab:"Our approach",label:"THE IFAGRITHM APPROACH",lines:["Start with a","real question."],description:"Define the decision, examine the available evidence and report findings, limitations and recommended options. The problem decides the method.",outputs:[]},
 ];
 
 export default function FeatureSection() {
