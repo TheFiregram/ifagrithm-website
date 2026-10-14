@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "html-to-image": "^1.11.13",
-    "next": "15.5.26",
+    "next": "15.5.27",
     "react": "19.1.9",
     "react-dom": "19.1.9",
     "undici": "^6.21.3",
@@ -25,7 +25,7 @@
     "@types/react": "19.1.6",
     "@types/react-dom": "19.1.5",
     "eslint": "9.34.0",
-    "eslint-config-next": "15.5.26",
+    "eslint-config-next": "15.5.27",
     "typescript": "5.8.3"
   },
   "overrides": {

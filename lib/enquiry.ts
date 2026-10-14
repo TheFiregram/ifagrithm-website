@@ -1,5 +1,5 @@
 export const ENQUIRY_EMAIL = "Ifagrithm@gmail.com";
-export const ENQUIRY_SUBJECT = "IFAGRITHM demo enquiry";
+export const ENQUIRY_SUBJECT = "IFAGRITHM discovery call request";
 
 export type Enquiry = {
   name: string;
@@ -14,7 +14,7 @@ export function enquiryMessage(enquiry: Enquiry): string {
     `Email: ${enquiry.email.trim()}`,
     `Company: ${enquiry.company.trim() || "Not provided"}`,
     "",
-    "Research question:",
+    "Discussion topic:",
     enquiry.question.trim(),
   ].join("\r\n");
 }

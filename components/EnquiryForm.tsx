@@ -21,13 +21,13 @@ export default function EnquiryForm() {
     event.preventDefault();
     if (!event.currentTarget.reportValidity()) return;
     if (!brief.name.trim() || !brief.question.trim()) {
-      setStatus("Complete your name and research question.");
+      setStatus("Complete your name and what you'd like to discuss.");
       return;
     }
 
     const enquiry = { name: brief.name.trim(), email: brief.email.trim(), company: brief.company.trim(), question: brief.question.trim() };
     setPrepared(enquiry);
-    setStatus("Your email draft is ready. Review it and press Send in your email app. If it did not open, use an option below.");
+    setStatus("Your request is ready as an email draft. Send it to request a call. We will need to agree on a time; no booking is confirmed yet.");
     window.location.href = enquiryEmailUrl(enquiry);
   }
 
@@ -37,9 +37,9 @@ export default function EnquiryForm() {
       <label htmlFor="brief-email">Work email<input id="brief-email" name="email" type="email" autoComplete="email" required maxLength={254} placeholder="you@company.com" value={brief.email} onChange={event => update("email", event.target.value)} /></label>
     </div>
     <label htmlFor="brief-company">Company <span className="optional">(optional)</span><input id="brief-company" name="company" autoComplete="organization" maxLength={200} placeholder="Your team or product" value={brief.company} onChange={event => update("company", event.target.value)} /></label>
-    <label htmlFor="brief-question">What would you like us to investigate?<textarea id="brief-question" name="question" required maxLength={4000} rows={3} placeholder="The decision, the challenge, or the question…" value={brief.question} onChange={event => update("question", event.target.value)} /></label>
-    <button className="button button-primary" type="submit">Open email draft <Arrow /></button>
-    <p className="form-helper">Opens a draft to {ENQUIRY_EMAIL} with your details. Review it and press Send in your email app.</p>
+    <label htmlFor="brief-question">What would you like to discuss on the call?<textarea id="brief-question" name="question" required maxLength={4000} rows={3} placeholder="Your business challenge or the decision you need to make…" value={brief.question} onChange={event => update("question", event.target.value)} /></label>
+    <button className="button button-primary" type="submit">Prepare call request <Arrow /></button>
+    <p className="form-helper">Opens an email request to {ENQUIRY_EMAIL}. Review and send it so the team can arrange a call. Sending a request does not confirm a booking.</p>
     <p className="form-status" role="status" aria-live="polite">{status}</p>
     {prepared ? <div className="enquiry-email-options" aria-label="Email options">
       <a className="enquiry-email" href={enquiryEmailUrl(prepared)}>Open draft again</a>
