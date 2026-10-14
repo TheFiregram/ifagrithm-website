@@ -169,3 +169,36 @@ html[data-theme=dark] .header-inner{background:rgba(16,16,16,.5);border-color:rg
 @media(prefers-reduced-motion:reduce){.hero-lens-progress>span{animation:none!important;transform:none!important}.hero-lens-area{transform:none!important}.strategy-panel{animation:none!important}}
 
 @media(max-width:640px){.feature-copy h3{font-size:clamp(29px,8vw,38px)}.feature-copy h3>span{white-space:normal;text-wrap:balance}}
+
+
+/* Keep the longer discovery-call CTA and hero content usable on short phones. */
+@media(max-width:640px){
+  .hero{height:auto;min-height:100svh;display:flex;flex-direction:column;justify-content:center;overflow:clip;padding:100px 18px 30px}
+  .hero-content{flex:none}
+  .hero-actions .button{min-height:44px;height:auto;text-align:center;padding:11px 14px}
+  .scroll-cue{position:relative;left:auto;bottom:auto;transform:none;margin:28px auto 0;flex:none}
+}
+@media(max-width:560px){
+  .header-cta{padding-inline:10px;font-size:clamp(10px,2.85vw,12px);gap:5px}
+  .header-actions{gap:3px}
+}
+@media(max-width:640px) and (max-height:740px){
+  .hero{padding-top:86px;padding-bottom:25px}
+  .hero-mark{height:130px;width:130px}
+  .hero-mark .brand-mark{width:92px;height:122px}
+  .hero-mark .brand-mark img{width:165px;height:165px;left:-37px;top:-23px}
+  .hero-company-kicker{margin-top:2px}
+  .hero-headline.hero-headline-static{font-size:clamp(35px,9.5vw,48px);margin-top:11px}
+  .hero-copy.hero-summary{margin-top:15px}
+  .hero-lens{margin-top:16px}
+  .hero-actions{margin-top:20px}
+  .scroll-cue{margin-top:18px}
+}
+@media(max-width:640px) and (orientation:landscape) and (max-height:520px){
+  .hero{padding-top:80px;padding-bottom:24px}
+  .hero-mark{height:95px;width:95px}
+  .hero-mark .brand-mark{width:70px;height:90px}
+  .hero-mark .brand-mark img{width:126px;height:126px;left:-28px;top:-18px}
+  .hero-headline.hero-headline-static{font-size:clamp(32px,5vw,42px)}
+  .hero-lens{max-width:570px}
+}
