@@ -23,14 +23,6 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             remote/package-lock.json
-      # Temporary diagnostic step for the existing dependency audit findings. Revert after lock refresh.
-      - name: Calculate dependency lockfile update
-        run: |
-          npm install next@15.5.27 eslint-config-next@15.5.27 --save-exact --package-lock-only --ignore-scripts --no-audit
-          npm audit fix --package-lock-only --ignore-scripts || true
-          echo "BEGIN_LOCK_DIFF"
-          git diff --unified=0 -- package.json package-lock.json
-          echo "END_LOCK_DIFF"
       - run: npm ci
       - run: npm ci --prefix remote
       - run: npm test
